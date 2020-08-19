@@ -1296,7 +1296,6 @@ module.exports = {
                     }
 
                     let fullArrayWithMealList = []
-                    let mealKey = {};
 
                     /**Make menu meal wise */
                     if(allRestaurantMenus.length > 0){
@@ -1305,20 +1304,24 @@ module.exports = {
                             for(let k = 0; k < getMealList.length; k++){
                                 const mealId = getMealList[k]._id
                                 const name = getMealList[k].type
-
-                                mealKey[name] = mealKey[name] || []
+                                let mealWiseMenuArray = []
 
                                 for(let l = 0; l < allRestaurantMenus.length; l++){
                                     const menuMealId = allRestaurantMenus[l].mealTypeId._id
 
                                     if(menuMealId.toString() === mealId.toString()){
-                                        mealKey[name].push(allRestaurantMenus[l])
+                                        mealWiseMenuArray.push(allRestaurantMenus[l])
                                     }
 
                                 }
+
+                                let mealObj = {
+                                    name : name,
+                                    value : mealWiseMenuArray
+                                }
+                                fullArrayWithMealList.push(mealObj)
                             }
 
-                            fullArrayWithMealList.push(mealKey)
                         }
                     }
                     /**End */
