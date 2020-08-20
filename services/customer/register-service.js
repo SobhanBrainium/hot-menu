@@ -263,6 +263,19 @@ module.exports = {
             callBack (dashboard)
         }
     },
+    categoryWiseMenu : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const categoryWiseMenu = await registerModel.categoryWiseMenu(data)
+            return categoryWiseMenu
+        } 
+    },
     favoriteMenuList : async (data) => {
         if (!data) {
             res.json({
@@ -272,8 +285,8 @@ module.exports = {
                 response_data: {}
             })
         } else {
-            const dashboard = await registerModel.favoriteMenuList(data)
-            return dashboard
+            const favoriteMenuList = await registerModel.favoriteMenuList(data)
+            return favoriteMenuList
         } 
     },
     markAsFavorite : async (data) => {
@@ -285,8 +298,8 @@ module.exports = {
                 response_data: {}
             })
         } else {
-            const dashboard = await registerModel.markAsFavorite(data)
-            return dashboard
+            const markAsFavorite = await registerModel.markAsFavorite(data)
+            return markAsFavorite
         } 
     },
     markAsUnFavorite : async (data) => {
@@ -298,8 +311,8 @@ module.exports = {
                 response_data: {}
             })
         } else {
-            const dashboard = await registerModel.markAsUnFavorite(data)
-            return dashboard
+            const markAsUnFavorite = await registerModel.markAsUnFavorite(data)
+            return markAsUnFavorite
         }
     }
 

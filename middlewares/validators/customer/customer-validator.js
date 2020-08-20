@@ -373,6 +373,36 @@ module.exports = {
             
         }
     },
+    categoryWiseMenuValidator : async (req, res, next) => {
+        var userType = ['CUSTOMER','GUEST']
+        const rules = joi.object({
+            customerId: joi.string().required().error(new Error('customerId is required')),
+            userType: joi.string().valid(...userType).error(new Error('Please send userType')),
+            latitude: joi.string().required().error(new Error('Latitude required')),
+            longitude: joi.string().required().error(new Error('Longitude required')),
+            categoryId : joi.string().required().error(new Error('categoryId required')),
+        });
+
+        const value = await rules.validate(req.body);
+        if (value.error) {
+            res.status(422).json({
+                success: false,
+                STATUSCODE: 422,
+                message: value.error.message
+            })
+        } else {
+            if((userType == 'CUSTOMER') && (customerId == '')) {
+                res.status(422).json({
+                    success: false,
+                    STATUSCODE: 422,
+                    message: 'Customer Id is required'
+                })
+            } else {
+                next();
+            }
+            
+        }
+    },
     favoriteMenuListValidator : async (req, res, next) => {
         var userType = ['CUSTOMER','GUEST']
         const rules = joi.object({

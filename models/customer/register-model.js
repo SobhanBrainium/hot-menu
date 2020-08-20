@@ -1385,6 +1385,147 @@ module.exports = {
            }) 
         }
     },
+    categoryWiseMenu : async (data) => {
+        try {
+            if(data){
+                const customerId = data.customerId
+                const latt = data.latitude;
+                const long = data.longitude;
+                const userType = data.userType;
+                const categoryId = data.categoryId
+                let responseDt = [];
+                let response_data = {};
+                let allRestaurantMenus = []
+                let topDishes = []
+
+                /**Search vendor with user current lat, long */
+                const isVendorExist = await Restaurant.find({
+                    location: {
+                        $near: {
+                            $maxDistance: config.restaurantSearchDistance,
+                            $geometry: {
+                                type: "Point",
+                                coordinates: [long, latt]
+                            }
+                        }
+                    },
+                    isActive: true
+                })
+
+                if(isVendorExist.length > 0){
+                    for(let i = 0; i < isVendorExist.length; i++){
+                        const restaurantId = isVendorExist[i]._id
+
+                        /**Fetch restaurant menu based on category id */
+                        const getRestaurantMenuLists = await RestaurantMenu.find({restaurantId, categoryId})
+                        .populate('mealTypeId')
+                        .populate('categoryId')
+                        .sort({_id : -1})
+
+                        if(getRestaurantMenuLists.length > 0){
+                            /**Create all restaurant menu list array with favorite item option */
+                            for(let j = 0; j < getRestaurantMenuLists.length; j++){
+                                getRestaurantMenuLists[j].menuImage = `${config.serverhost}:${config.port}/img/category/${getRestaurantMenuLists[j].menuImage}`;
+
+                                /** check favorite menu  */
+                                const isFavorite = await FavoriteMenu.findOne({menuId : getRestaurantMenuLists[j]._id, customerId : customerId})
+                                /** end */
+
+                                const finalMenusResponse = {
+                                    ...getRestaurantMenuLists[j].toObject(),
+                                    isFavorite : isFavorite != null ? 1 : 0
+                                }
+
+                                allRestaurantMenus.push(finalMenusResponse)
+
+                                /**Create Top dishes based on number of favorite count */
+                                const getCount = await FavoriteMenu.countDocuments({menuId : getRestaurantMenuLists[j]._id})
+                                if(getCount >= 3){
+                                    const topDishesResponse = {
+                                        ...getRestaurantMenuLists[j].toObject(),
+                                        isFavorite : isFavorite != null ? 1 : 0
+                                    }
+                                    topDishes.push(topDishesResponse)
+                                }
+                                /**End */
+                            }
+                        }
+                    }
+
+                    let fullArrayWithMealList = []
+
+                    /**Make menu meal wise */
+                    if(allRestaurantMenus.length > 0){
+                        const getMealList = await MealType.find()
+                        if(getMealList.length > 0){
+                            for(let k = 0; k < getMealList.length; k++){
+                                const mealId = getMealList[k]._id
+                                const name = getMealList[k].type
+                                let mealWiseMenuArray = []
+
+                                for(let l = 0; l < allRestaurantMenus.length; l++){
+                                    const menuMealId = allRestaurantMenus[l].mealTypeId._id
+
+                                    if(menuMealId.toString() === mealId.toString()){
+                                        mealWiseMenuArray.push(allRestaurantMenus[l])
+                                    }
+
+                                }
+
+                                let mealObj = {
+                                    name : name,
+                                    value : mealWiseMenuArray
+                                }
+                                fullArrayWithMealList.push(mealObj)
+                            }
+
+                        }
+
+                        //toDaysMenu
+                        response_data.toDaysMenu = fullArrayWithMealList
+
+                        //top dishes
+                        response_data.topDishes = topDishes
+
+                        //Category Data
+                        response_data.category_data = await Category.find({})
+                        response_data.category_imageUrl = `${config.serverhost}:${config.port}/img/category/`;
+
+                        return {
+                            success: true,
+                            STATUSCODE: 200,
+                            message: `${allRestaurantMenus.length} menus has been successfully found.`,
+                            response_data: response_data
+                        }
+                    }else{
+                        return {
+                            success: true,
+                            STATUSCODE: 200,
+                            message: 'No menus found.',
+                            response_data: {}
+                        }
+                    }
+                    /**End */
+                }else{
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'No nearby restaurants found.',
+                        response_data: {}
+                    }
+                }
+            }
+            
+        } catch (error) {
+            console.log(error, 'err')
+           return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error',
+                response_data: {}
+           }
+        }
+    },
     favoriteMenuList : async (data) => {
         try {
             const userData = data

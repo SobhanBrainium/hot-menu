@@ -122,5 +122,11 @@ customerApi.post('/markAsUnFavorite', jwtTokenValidator.validateToken, customerV
 })
 //#endregion
 
+//#region category wise menu list
+customerApi.post('/categoryWiseMenu', jwtTokenValidator.validateToken, customerValidator.categoryWiseMenuValidator, async(req, res) => {
+    const result = await registerService.categoryWiseMenu(req.body);
+    res.status(200).send(result);
+})
+//#endregion
 
 module.exports = customerApi;
