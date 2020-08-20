@@ -695,6 +695,46 @@ module.exports = {
                         } else {
 
                             var userOtp = await sendVerificationCode(result);
+                            const authToken = generateToken(result);
+                            // var resUser = {
+                            //     userId: result._id,
+                            //     sid: userOtp.serviceSid
+                            // }
+
+                            //#region Sent user OTP to email
+                            let generateRegisterOTP = generateOTP()
+                            if(generateRegisterOTP != ''){
+                                //#region save OTP to DB
+                                const addedOTPToTable = new OTPLog({
+                                    userId : result._id,
+                                    email : result.email,
+                                    otp : generateRegisterOTP,
+                                    usedFor : "Registration",
+                                    status : 1
+                                })
+                                const savetoDB = await addedOTPToTable.save()
+                                //#endregion
+                            }
+                            //#endregion
+
+
+                            let response = {
+                                userDetails: {
+                                    fullName: result.fullName,
+                                    email: result.email,
+                                    countryCode: result.countryCode,
+                                    countryCodeId : result.countryCodeId,
+                                    phone: result.phone.toString(),
+                                    socialId: result.socialId,
+                                    customerId: result._id,
+                                    profileImage: `${config.serverhost}:${config.port}/img/profile-pic/` + result.profileImage,
+                                    userType: 'CUSTOMER',
+                                    loginType: data.loginType,
+                                    sid: userOtp.serviceSid,
+                                    otp : generateRegisterOTP
+                                },
+                                authToken: authToken
+                            }
 
                             // var resUser = {
                             //     userId: result._id,
@@ -704,29 +744,12 @@ module.exports = {
 
                             var verifyMsg = 'Please check your phone. We have sent a code to be used to verify your account.';
 
-                            let response = {
-                                                    userDetails: {
-                                                        fullName: result.fullName,
-                                                        email: result.email,
-                                                        countryCode: result.countryCode,
-                                                        countryCodeId : result.countryCodeId,
-                                                        phone: result.phone.toString(),
-                                                        socialId: result.socialId,
-                                                        customerId: result._id,
-                                                        loginId: '',
-                                                        profileImage: `${config.serverhost}:${config.port}/img/profile-pic/` + result.profileImage,
-                                                        userType: 'CUSTOMER',
-                                                        loginType: data.loginType
-                                                    },
-                                                    authToken: '',
-                                                    userId: result._id,
-                                                    sid: userOtp.serviceSid
-                                                }
-
+                            /** Send Registration Email */
+                            mail('sendOTPdMail')(response.userDetails.email, response.userDetails).send();
 
                             callBack({
-                                success: false,
-                                STATUSCODE: 410,
+                                success: true,
+                                STATUSCODE: 200,
                                 message: verifyMsg,
                                 response_data: response
                             });
@@ -1360,6 +1383,168 @@ module.exports = {
                 message: 'Internal DB error',
                 response_data: {}
            }) 
+        }
+    },
+    favoriteMenuList : async (data) => {
+        try {
+            const userData = data
+            // const destLat = req.query.latitude;
+            // const destLong = req.query.longitude;
+    
+            const favoriteLists = await FavoriteMenu.find({customerId : userData.customerId})
+            .populate({
+                path : "menuId",
+                populate : {
+                    path : "mealTypeId"
+                }
+            })
+            .sort({_id : -1})
+    
+            if(favoriteLists.length > 0){
+                let favoriteRestaurantLists = []
+    
+                //#region get restaurant distance
+                for(let i = 0; i <favoriteLists.length; i++){
+                    favoriteLists[i].menuId.menuImage = `${config.serverhost}:${config.port}/img/category/${favoriteLists[i].menuId.menuImage}`
+                //     //#region get restaurant detail and distance
+                //     const getDetail = await vendorSchema.findById(favoriteLists[i].vendorId._id)
+                //     if(getDetail){
+                //         const sourceLong = getDetail.location.coordinates[0];
+                //         const sourceLat = getDetail.location.coordinates[1];
+    
+                //         const getDistance = await getDistanceinMtr(sourceLat, sourceLong, destLat, destLong)
+    
+                //         let responseObj = {};
+                //         responseObj = {
+                //             id: getDetail._id,
+                //             name: getDetail.restaurantName,
+                //             description: getDetail.description,
+                //             logo: `${config.serverhost}:${config.port}/img/vendor/${getDetail.logo}`,
+                //             rating: getDetail.rating,
+                //             distance : getDistance
+                //         };
+    
+                //         favoriteRestaurantLists.push(responseObj)
+                //     }
+                //     //#endregion
+                }
+                //#endregion
+    
+                return{
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'Favorite restaurant list fetch successfully.',
+                    response_data: favoriteLists
+                }
+            }else{
+                return{
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'No favorite restaurant list found.',
+                    response_data: []
+                }
+            }
+        } catch (error) {
+            console.log(error)
+           return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
+    },
+    markAsFavorite : async (data) => {
+        try {
+            if(!data.menuId){
+                return res.send({
+                    success: false,
+                    STATUSCODE: 422,
+                    message: 'Please provide menuId.'
+                })
+            }
+    
+            const alreadyAddedOrNot = await FavoriteMenu.findOne({menuId : data.menuId,
+            customerId : data.customerId})
+    
+            if(alreadyAddedOrNot){
+                return{
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'Menu has already marked as favourite.',
+                    response_data: {}
+                }
+            }
+    
+            const markAsFavorite = new FavoriteMenu({
+                menuId : data.menuId,
+                customerId : data.customerId
+            })
+    
+            const addedData = await markAsFavorite.save()
+    
+            if(addedData){
+                return {
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'Menu marked as favorite successfully.',
+                    response_data: addedData
+                }
+            }else{
+                return {
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'Failed.',
+                    response_data: {}
+                }
+            }
+        } catch (error) {
+            console.log(error,'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
+    },
+    markAsUnFavorite : async (data) => {
+        try {
+            if(!data.menuId){
+                return res.send({
+                    success: false,
+                    STATUSCODE: 422,
+                    message: 'Please provide menuId.'
+                })
+            }
+    
+            const alreadyAddedOrNot = await FavoriteMenu.findOne({menuId : data.menuId,
+            customerId : data.customerId})
+    
+            if(alreadyAddedOrNot){
+                const unFavourite = await FavoriteMenu.remove({menuId : data.menuId,
+                    customerId : data.customerId})
+                return {
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'Menu has marked as unfavourite.',
+                    response_data: {}
+                }
+            }
+            return {
+                success: true,
+                STATUSCODE: 200,
+                message: 'No Menu found as favorite.',
+                response_data: {}
+            }
+        } catch (error) {
+            console.log(error,'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
         }
     }
 }

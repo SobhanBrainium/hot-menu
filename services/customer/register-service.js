@@ -262,5 +262,45 @@ module.exports = {
             const dashboard = await registerModel.dashboard(data, callBack)
             callBack (dashboard)
         }
+    },
+    favoriteMenuList : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const dashboard = await registerModel.favoriteMenuList(data)
+            return dashboard
+        } 
+    },
+    markAsFavorite : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const dashboard = await registerModel.markAsFavorite(data)
+            return dashboard
+        } 
+    },
+    markAsUnFavorite : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const dashboard = await registerModel.markAsUnFavorite(data)
+            return dashboard
+        }
     }
+
 }

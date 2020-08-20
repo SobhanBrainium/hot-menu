@@ -87,7 +87,6 @@ customerApi.post('/profileImageUpload',jwtTokenValidator.validateToken,customerV
     });
 });
 
-
 /** Change password */
 customerApi.post('/logout',jwtTokenValidator.validateToken, customerValidator.logout, function(req, res) {
     registerService.logout(req, function(result) {
@@ -101,5 +100,27 @@ customerApi.post('/dashboard', jwtTokenValidator.validateToken, customerValidato
         res.status(200).send(result);
     });
 })
+
+//#region list of favorites menu by customer
+customerApi.post('/favoriteMenuList', jwtTokenValidator.validateToken, customerValidator.favoriteMenuListValidator, async(req, res) => {
+    const result = await registerService.favoriteMenuList(req.body)
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region mark as favorite restaurant by customer
+customerApi.post('/markAsFavorite', jwtTokenValidator.validateToken, customerValidator.markAsFavoriteValidator, async(req, res) => {
+    const result = await registerService.markAsFavorite(req.body)
+    res.status(200).send(result)
+})
+//#endregion
+
+//#region mark as un favorite restaurant by customer
+customerApi.post('/markAsUnFavorite', jwtTokenValidator.validateToken, customerValidator.markAsFavoriteValidator, async(req, res) => {
+    const result = await registerService.markAsUnFavorite(req.body)
+    res.status(200).send(result)
+})
+//#endregion
+
 
 module.exports = customerApi;

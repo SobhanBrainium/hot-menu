@@ -58,7 +58,7 @@ exports.validateToken = async (req, res, next) => {
             res.status(401).send({
                 success: false,
                 STATUSCODE: 401,
-                message: 'Token format not valid',
+                message: 'Token not supplied.',
                 response_data: {}
             });
 
