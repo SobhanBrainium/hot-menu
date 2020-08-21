@@ -8,9 +8,11 @@ const FavoriteMenu = require('../../schema/FavoriteMenu')
 const config = require('../../config');
 const mail = require('../../modules/sendEmail');
 var bcrypt = require('bcryptjs');
+const _ = require("lodash")
 
 const OTPLog = require("../../schema/OTPLog")
 const MealType = require("../../schema/MealType")
+const Cart = require("../../schema/Cart")
 
 module.exports = {
     //Customer 
@@ -1680,6 +1682,231 @@ module.exports = {
             }
         } catch (error) {
             console.log(error,'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
+    },
+    addToCart : async (data) => {
+        try {
+            if(data){
+                const menuObj = {
+                    menuId : data.menuId,
+                    menuAmount : parseFloat(data.menuAmount),
+                    menuQuantity : Number(data.menuQuantity),
+                    menuTotal : parseFloat(parseFloat(data.menuAmount) * Number(data.menuQuantity))
+                }
+                
+                const userCartInfo = await Cart.findOne({customerId : data.customerId, isCheckout : 1, status : 'Y'})
+                /**check customer is already exist in cart or not. If exist then update menu object otherwise insert new menu */
+                if(userCartInfo){
+                    // update menu object
+                    userCartInfo.menus.unshift(menuObj)
+                    userCartInfo.cartTotal = parseFloat(userCartInfo.cartTotal + menuObj.menuTotal)
+
+                    const result = await userCartInfo.save()
+
+                    return {
+                        success: true,
+                        STATUSCODE : 200,
+                        message : "Menu has been successfully added to cart.",
+                        response_data : result
+                    }
+                }else{
+                    /**New menu added in cart */
+                    const itemAddedObj = new Cart({
+                        customerId : data.customerId,
+                        menus : menuObj,
+                        cartTotal : menuObj.menuTotal
+                    })
+                    const result = await itemAddedObj.save()
+    
+                    return {
+                        success: true,
+                        STATUSCODE : 200,
+                        message : "Menu has been successfully added to cart.",
+                        response_data : result
+                    }
+                }
+            }
+        } catch (error) {
+            console.log(error,'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
+    },
+    cartList : async (data) => {
+        try {
+            if(data){
+                const pendingCartDetail = await Cart.findOne({customerId : data.customerId, status : 'Y', isCheckout : 1})
+                .populate('menus.menuId', {_id : 0, menuImage : 1, itemName : 1  })
+
+                if(pendingCartDetail){
+                    _.forEach(pendingCartDetail.menus, (itemValue) => {
+                        itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/category/` + itemValue.menuId.menuImage
+                    })
+
+                    return {
+                        success: true,
+                        STATUSCODE : 200,
+                        message : "Cart detail has been fetched successfully.",
+                        response_data : pendingCartDetail
+                    }
+                }
+                return {
+                    success: true,
+                    STATUSCODE : 200,
+                    message : "No cart item found.",
+                    response_data : {}
+                }
+            }
+        } catch (error) {
+            console.log(error,'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
+    },
+    updateCartItem : async (data) => {
+        try {
+            if(data){
+                // find cart detail of logged in user
+                const isCartExist = await Cart.findById(data.cartId)
+                if(isCartExist){
+                    // find cart item
+                    const isCartItemExist = _.filter(isCartExist.menus, product => product._id == data.menuId)
+    
+                    if(isCartItemExist.length > 0){
+                        const menuQuantity = Number(data.menuQuantity)
+                        const menuAmount = parseFloat(data.menuAmount)
+                        const previousCartTotal = parseFloat(isCartExist.cartTotal)
+                        const previousItemTotal = parseFloat(isCartItemExist[0].menuTotal)
+    
+                        if(menuQuantity > 0){
+                            //update item
+                            isCartItemExist[0].menuQuantity = parseInt(menuQuantity)
+                            isCartItemExist[0].menuTotal = parseFloat( menuAmount * menuQuantity)
+    
+                            //update cart total increase or decrease number of quantity
+                            let  cartValueAfterDeductivePreviousItemValue = parseFloat(previousCartTotal - previousItemTotal)
+                            const finalCartValue = parseFloat(cartValueAfterDeductivePreviousItemValue + isCartItemExist[0].menuTotal)
+    
+                            isCartExist.cartTotal = finalCartValue
+                            const updatedData = await isCartExist.save()
+    
+                            const fetchCartList = await Cart.findOne({customerId : data.customerId, _id : data.cartId, status : 'Y'})
+                            .populate('menus.menuId', {_id : 1, menuImage : 1, itemName : 1  })
+    
+                            _.forEach(fetchCartList.menus, (itemValue) => {
+                                itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/category/` + itemValue.menuId.menuImage
+                            })
+    
+    
+                            return {
+                                success: true,
+                                STATUSCODE: 200,
+                                message: 'Cart updated successfully.',
+                                response_data: fetchCartList
+                            }
+                        }
+                        return {
+                            success: true,
+                            STATUSCODE: 422,
+                            message: 'Product quantity must be greater then 0.',
+                            response_data: {}
+                        }
+                    }
+    
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'Wrong item selected or product not found.',
+                        response_data: {}
+                    }
+                }
+                return {
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'No cart item has been found.',
+                    response_data: {}
+                }
+            }
+        } catch (error) {
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
+    },
+    removeCartItem : async (data) => {
+        try {
+            if(data){
+                const isExist = await Cart.findOne({_id : data.cartId, customerId : data.customerId, isCheckout : 1})
+                console.log(isExist, 'exist')
+                if(isExist){
+                    const itemDetail = _.filter(isExist.menus, product => product._id == data.menuId)
+                    console.log(itemDetail, 'detail')
+                    // remove item
+                    const removedData = await Cart.update({_id : data.cartId},{
+                        $pull : {
+                            menus :{
+                                _id : itemDetail[0]._id
+                            }
+                        }
+                    })
+    
+                    //update Cart total
+                    isExist.cartTotal = parseFloat(isExist.cartTotal - itemDetail[0].menuTotal)
+                    await isExist.save() 
+    
+                    let updatedCart = await Cart.findOne({customerId : data.customerId, _id : data.cartId})
+                    .populate('menus.menuId', {_id : 1, menuImage : 1, itemName : 1  })
+            
+                    _.forEach(updatedCart.menus, (itemValue) => {
+            
+                        itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/category/` + itemValue.menuId.menuImage
+                    })
+    
+                    // delete full cart object from DB if cart item is running below from one.
+                    if(updatedCart){
+                        if(updatedCart.menus.length == 0){
+                            const deleteCart = await Cart.deleteOne({_id : data.cartId})
+                            if(deleteCart){
+                                updatedCart = {}
+                            }
+                        }
+    
+                    }
+    
+                    return {
+                        success: true,
+                        STATUSCODE : 200,
+                        message : "Item has been successfully removed from cart.",
+                        response_data: updatedCart
+                    }
+                }
+    
+                return {
+                    success: true,
+                    STATUSCODE : 200,
+                    message : "Record not found.",
+                    response_data: {}
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
             return {
                 success: false,
                 STATUSCODE: 500,

@@ -314,6 +314,57 @@ module.exports = {
             const markAsUnFavorite = await registerModel.markAsUnFavorite(data)
             return markAsUnFavorite
         }
+    },
+    addToCart : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const addToCart = await registerModel.addToCart(data)
+            return addToCart
+        }
+    },
+    cartList : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const cartList = await registerModel.cartList(data)
+            return cartList
+        }
+    },
+    updateCartItem : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const updateCartItem = await registerModel.updateCartItem(data)
+            return updateCartItem
+        }
+    },
+    removeCartItem : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const removeCartItem = await registerModel.removeCartItem(data)
+            return removeCartItem
+        }
     }
-
 }

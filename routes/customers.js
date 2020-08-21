@@ -129,4 +129,32 @@ customerApi.post('/categoryWiseMenu', jwtTokenValidator.validateToken, customerV
 })
 //#endregion
 
+//#region Add to cart
+customerApi.post("/addToCart", jwtTokenValidator.validateToken, customerValidator.addToCartValidator, async(req, res) => {
+    const result = await registerService.addToCart(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region Customer cart list
+customerApi.post("/cartList", jwtTokenValidator.validateToken, customerValidator.cartListValidator, async(req, res) => {
+    const result = await registerService.cartList(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region update cart menu
+customerApi.post("/updateCartItem", jwtTokenValidator.validateToken, customerValidator.updateCartItemValidator, async(req, res) => {
+    const result = await registerService.updateCartItem(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region remove cart menu
+customerApi.post("/removeCartItem", jwtTokenValidator.validateToken, customerValidator.removeCartItemValidator, async(req, res) => {
+    const result = await registerService.removeCartItem(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
 module.exports = customerApi;

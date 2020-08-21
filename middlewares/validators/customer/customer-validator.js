@@ -458,6 +458,115 @@ module.exports = {
             }
             
         }
+    },
+    addToCartValidator : async (req, res, next) => {
+        var userType = ['CUSTOMER','GUEST']
+        const rules = joi.object({
+            customerId: joi.string().required().error(new Error('customerId is required')),
+            menuId: joi.string().required().error(new Error('menuId required')),
+            menuAmount : joi.number().required().error(new Error('menuAmount required')),
+            menuQuantity : joi.number().required().error(new Error('menuQuantity required')),
+        });
+        const value = await rules.validate(req.body);
+        if (value.error) {
+            res.status(422).json({
+                success: false,
+                STATUSCODE: 422,
+                message: value.error.message
+            })
+        } else {
+            if((userType == 'CUSTOMER') && (customerId == '')) {
+                res.status(422).json({
+                    success: false,
+                    STATUSCODE: 422,
+                    message: 'Customer Id is required'
+                })
+            } else {
+                next();
+            }
+            
+        }
+    },
+    cartListValidator : async (req, res, next) => {
+        var userType = ['CUSTOMER','GUEST']
+        const rules = joi.object({
+            customerId: joi.string().required().error(new Error('customerId is required')),
+        });
+        const value = await rules.validate(req.body);
+        if (value.error) {
+            res.status(422).json({
+                success: false,
+                STATUSCODE: 422,
+                message: value.error.message
+            })
+        } else {
+            if((userType == 'CUSTOMER') && (customerId == '')) {
+                res.status(422).json({
+                    success: false,
+                    STATUSCODE: 422,
+                    message: 'Customer Id is required'
+                })
+            } else {
+                next();
+            }
+            
+        }
+    },
+    updateCartItemValidator : async (req, res, next) => {
+        var userType = ['CUSTOMER','GUEST']
+        const rules = joi.object({
+            customerId: joi.string().required().error(new Error('customerId is required')),
+            cartId: joi.string().required().error(new Error('cartId is required')),
+            menuId: joi.string().required().error(new Error('menuId required')),
+            menuAmount : joi.number().required().error(new Error('menuAmount required')),
+            menuQuantity : joi.number().required().error(new Error('menuQuantity required')),
+        });
+        const value = await rules.validate(req.body);
+        if (value.error) {
+            res.status(422).json({
+                success: false,
+                STATUSCODE: 422,
+                message: value.error.message
+            })
+        } else {
+            if((userType == 'CUSTOMER') && (customerId == '')) {
+                res.status(422).json({
+                    success: false,
+                    STATUSCODE: 422,
+                    message: 'Customer Id is required'
+                })
+            } else {
+                next();
+            }
+            
+        }
+    },
+    removeCartItemValidator : async (req, res, next) => {
+        var userType = ['CUSTOMER','GUEST']
+        const rules = joi.object({
+            customerId: joi.string().required().error(new Error('customerId is required')),
+            cartId: joi.string().required().error(new Error('cartId is required')),
+            menuId: joi.string().required().error(new Error('menuId required'))
+        });
+        const value = await rules.validate(req.body);
+        if (value.error) {
+            res.status(422).json({
+                success: false,
+                STATUSCODE: 422,
+                message: value.error.message
+            })
+        } else {
+            if((userType == 'CUSTOMER') && (customerId == '')) {
+                res.status(422).json({
+                    success: false,
+                    STATUSCODE: 422,
+                    message: 'Customer Id is required'
+                })
+            } else {
+                next();
+            }
+            
+        } 
     }
 }
 
