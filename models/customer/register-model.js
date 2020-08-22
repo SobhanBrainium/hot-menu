@@ -1421,7 +1421,7 @@ module.exports = {
                         /**Fetch restaurant menu based on category id */
                         const getRestaurantMenuLists = await RestaurantMenu.find({restaurantId, categoryId})
                         .populate('mealTypeId')
-                        .populate('categoryId')
+                        // .populate('categoryId')
                         .sort({_id : -1})
 
                         if(getRestaurantMenuLists.length > 0){
