@@ -1340,9 +1340,36 @@ module.exports = {
 
                                 }
 
+                                let finalMealWiseMenuArrayList = []
+                                if(mealWiseMenuArray.length > 0){
+                                    for(let m = 0; m < mealWiseMenuArray.length; m++){
+                                        let menuQuantityInCart = 0
+                                        // console.log(mealWiseMenuArray[m]._id, 'menu id')
+                                        /**check menu is exist in cart or not */
+                                        const isExistInCart = await Cart.findOne({customerId : customerId, status : "Y", isCheckout : 1})
+
+                                        if(isExistInCart){
+                                            // console.log(isExistInCart.menus, 'isExistInCart.menus')
+                                            const isMenuExistInCart = _.filter(isExistInCart.menus, product => product.menuId.toString() === mealWiseMenuArray[m]._id.toString())
+
+                                            if(isMenuExistInCart.length > 0){
+                                                menuQuantityInCart = isMenuExistInCart[0].menuQuantity
+                                            }
+                                        }
+                                        /**End */
+
+                                        let menuObj = {
+                                            ...mealWiseMenuArray[m],
+                                            cartMenuQuantity : menuQuantityInCart
+                                        }
+
+                                        finalMealWiseMenuArrayList.push(menuObj)
+                                    }
+                                }
+
                                 let mealObj = {
                                     name : name,
-                                    value : mealWiseMenuArray
+                                    value : finalMealWiseMenuArrayList
                                 }
                                 fullArrayWithMealList.push(mealObj)
                             }
@@ -1360,6 +1387,16 @@ module.exports = {
                     //Category Data
                     response_data.category_data = await Category.find({})
                     response_data.category_imageUrl = `${config.serverhost}:${config.port}/img/category/`;
+
+                    //cart total
+                    const customerCartTotal = await Cart.findOne({customerId, status : 'Y', isCheckout : 1})
+                    let cartMenuCount = 0
+                    if(customerCartTotal){
+                        for(let i = 0; i < customerCartTotal.menus.length; i++){
+                            cartMenuCount = cartMenuCount + customerCartTotal.menus[i].menuQuantity
+                        }
+                    }
+                    response_data.cartTotal = cartMenuCount
 
                     callBack({
                         success: true,
