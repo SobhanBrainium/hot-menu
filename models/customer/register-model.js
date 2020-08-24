@@ -466,7 +466,7 @@ module.exports = {
                                             callBack({
                                                 success: true,
                                                 STATUSCODE: 200,
-                                                message: 'User verified successfully.',
+                                                message: 'You have verified successfully.',
                                                 response_data: response
                                             })
 
@@ -1331,7 +1331,7 @@ module.exports = {
                         if(getRestaurantMenuLists.length > 0){
                             /**Create all restaurant menu list array with favorite item option */
                             for(let j = 0; j < getRestaurantMenuLists.length; j++){
-                                getRestaurantMenuLists[j].menuImage = `${config.serverhost}:${config.port}/img/category/${getRestaurantMenuLists[j].menuImage}`;
+                                getRestaurantMenuLists[j].menuImage = `${config.serverhost}:${config.port}/img/menu-pic/${getRestaurantMenuLists[j].menuImage}`;
 
                                 /** check favorite menu  */
                                 const isFavorite = await FavoriteMenu.findOne({menuId : getRestaurantMenuLists[j]._id, customerId : customerId})
@@ -1519,7 +1519,7 @@ module.exports = {
                         if(getRestaurantMenuLists.length > 0){
                             /**Create all restaurant menu list array with favorite item option */
                             for(let j = 0; j < getRestaurantMenuLists.length; j++){
-                                getRestaurantMenuLists[j].menuImage = `${config.serverhost}:${config.port}/img/category/${getRestaurantMenuLists[j].menuImage}`;
+                                getRestaurantMenuLists[j].menuImage = `${config.serverhost}:${config.port}/img/menu-pic/${getRestaurantMenuLists[j].menuImage}`;
 
                                 /** check favorite menu  */
                                 const isFavorite = await FavoriteMenu.findOne({menuId : getRestaurantMenuLists[j]._id, customerId : customerId})
@@ -1669,7 +1669,7 @@ module.exports = {
     
                 //#region get restaurant distance
                 for(let i = 0; i <favoriteLists.length; i++){
-                    favoriteLists[i].menuId.menuImage = `${config.serverhost}:${config.port}/img/category/${favoriteLists[i].menuId.menuImage}`
+                    favoriteLists[i].menuId.menuImage = `${config.serverhost}:${config.port}/img/menu-pic/${favoriteLists[i].menuId.menuImage}`
                     //#region get cart quantity
                     const isExistInCart = await Cart.findOne({customerId : userData.customerId, status : "Y", isCheckout : 1})
 
@@ -1699,7 +1699,7 @@ module.exports = {
                 return{
                     success: true,
                     STATUSCODE: 200,
-                    message: 'Favorite restaurant list fetch successfully.',
+                    message: 'Favorite restaurant list has been fetched successfully.',
                     response_data: {
                         cartId : customerCartTotal ? customerCartTotal._id : '',
                         list : favoriteRestaurantLists
@@ -1709,7 +1709,7 @@ module.exports = {
                 return{
                     success: true,
                     STATUSCODE: 200,
-                    message: 'No favorite restaurant list found.',
+                    message: 'No favorite restaurant list has been found.',
                     response_data: {}
                 }
             }
@@ -1835,11 +1835,20 @@ module.exports = {
 
                     const result = await userCartInfo.save()
 
-                    return {
-                        success: true,
-                        STATUSCODE : 200,
-                        message : "Menu has been successfully added to cart.",
-                        response_data : result
+                    const addToCartResponse = await Cart.findOne({customerId : data.customerId, status : 'Y', isCheckout : 1})
+                    .populate('menus.menuId')
+
+                    if(addToCartResponse){
+                        _.forEach(addToCartResponse.menus, (itemValue) => {
+                            itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/menu-pic/` + itemValue.menuId.menuImage
+                        })
+    
+                        return {
+                            success: true,
+                            STATUSCODE : 200,
+                            message : "Menu has been successfully added to cart.",
+                            response_data : addToCartResponse
+                        }
                     }
                 }else{
                     /**New menu added in cart */
@@ -1876,7 +1885,7 @@ module.exports = {
 
                 if(pendingCartDetail){
                     _.forEach(pendingCartDetail.menus, (itemValue) => {
-                        itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/category/` + itemValue.menuId.menuImage
+                        itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/menu-pic/` + itemValue.menuId.menuImage
                     })
 
                     return {
@@ -1910,7 +1919,7 @@ module.exports = {
                 const isCartExist = await Cart.findById(data.cartId)
                 if(isCartExist){
                     // find cart item
-                    const isCartItemExist = _.filter(isCartExist.menus, product => product._id == data.menuId)
+                    const isCartItemExist = _.filter(isCartExist.menus, product => product.menuId == data.menuId)
     
                     if(isCartItemExist.length > 0){
                         const menuQuantity = Number(data.menuQuantity)
@@ -1931,10 +1940,10 @@ module.exports = {
                             const updatedData = await isCartExist.save()
     
                             const fetchCartList = await Cart.findOne({customerId : data.customerId, _id : data.cartId, status : 'Y'})
-                            .populate('menus.menuId', {_id : 1, menuImage : 1, itemName : 1  })
+                            .populate('menus.menuId')
     
                             _.forEach(fetchCartList.menus, (itemValue) => {
-                                itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/category/` + itemValue.menuId.menuImage
+                                itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/menu-pic/` + itemValue.menuId.menuImage
                             })
     
     
@@ -1980,47 +1989,54 @@ module.exports = {
         try {
             if(data){
                 const isExist = await Cart.findOne({_id : data.cartId, customerId : data.customerId, isCheckout : 1})
-                console.log(isExist, 'exist')
                 if(isExist){
-                    const itemDetail = _.filter(isExist.menus, product => product._id == data.menuId)
-                    console.log(itemDetail, 'detail')
-                    // remove item
-                    const removedData = await Cart.update({_id : data.cartId},{
-                        $pull : {
-                            menus :{
-                                _id : itemDetail[0]._id
+                    const itemDetail = _.filter(isExist.menus, product => product.menuId == data.menuId)
+                    if(itemDetail.length > 0){
+                        // remove item
+                        const removedData = await Cart.update({_id : data.cartId},{
+                            $pull : {
+                                menus :{
+                                    _id : itemDetail[0]._id
+                                }
                             }
-                        }
-                    })
-    
-                    //update Cart total
-                    isExist.cartTotal = parseFloat(isExist.cartTotal - itemDetail[0].menuTotal)
-                    await isExist.save() 
-    
-                    let updatedCart = await Cart.findOne({customerId : data.customerId, _id : data.cartId})
-                    .populate('menus.menuId', {_id : 1, menuImage : 1, itemName : 1  })
-            
-                    _.forEach(updatedCart.menus, (itemValue) => {
-            
-                        itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/category/` + itemValue.menuId.menuImage
-                    })
-    
-                    // delete full cart object from DB if cart item is running below from one.
-                    if(updatedCart){
-                        if(updatedCart.menus.length == 0){
-                            const deleteCart = await Cart.deleteOne({_id : data.cartId})
-                            if(deleteCart){
-                                updatedCart = {}
+                        })
+        
+                        //update Cart total
+                        isExist.cartTotal = parseFloat(isExist.cartTotal - itemDetail[0].menuTotal)
+                        await isExist.save() 
+        
+                        let updatedCart = await Cart.findOne({customerId : data.customerId, _id : data.cartId})
+                        .populate('menus.menuId')
+                
+                        _.forEach(updatedCart.menus, (itemValue) => {
+                
+                            itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/menu-pic/` + itemValue.menuId.menuImage
+                        })
+        
+                        // delete full cart object from DB if cart item is running below from one.
+                        if(updatedCart){
+                            if(updatedCart.menus.length == 0){
+                                const deleteCart = await Cart.deleteOne({_id : data.cartId})
+                                if(deleteCart){
+                                    updatedCart = {}
+                                }
                             }
+        
                         }
-    
-                    }
-    
-                    return {
-                        success: true,
-                        STATUSCODE : 200,
-                        message : "Item has been successfully removed from cart.",
-                        response_data: updatedCart
+        
+                        return {
+                            success: true,
+                            STATUSCODE : 200,
+                            message : "Item has been successfully removed from cart.",
+                            response_data: updatedCart
+                        }
+                    }else{
+                        return {
+                            success: true,
+                            STATUSCODE : 200,
+                            message : "Wrong item selected.",
+                            response_data: {}
+                        }
                     }
                 }
     
