@@ -1670,42 +1670,47 @@ module.exports = {
                 //#region get restaurant distance
                 for(let i = 0; i <favoriteLists.length; i++){
                     favoriteLists[i].menuId.menuImage = `${config.serverhost}:${config.port}/img/category/${favoriteLists[i].menuId.menuImage}`
-                //     //#region get restaurant detail and distance
-                //     const getDetail = await vendorSchema.findById(favoriteLists[i].vendorId._id)
-                //     if(getDetail){
-                //         const sourceLong = getDetail.location.coordinates[0];
-                //         const sourceLat = getDetail.location.coordinates[1];
-    
-                //         const getDistance = await getDistanceinMtr(sourceLat, sourceLong, destLat, destLong)
-    
-                //         let responseObj = {};
-                //         responseObj = {
-                //             id: getDetail._id,
-                //             name: getDetail.restaurantName,
-                //             description: getDetail.description,
-                //             logo: `${config.serverhost}:${config.port}/img/vendor/${getDetail.logo}`,
-                //             rating: getDetail.rating,
-                //             distance : getDistance
-                //         };
-    
-                //         favoriteRestaurantLists.push(responseObj)
-                //     }
-                //     //#endregion
+                    //#region get cart quantity
+                    const isExistInCart = await Cart.findOne({customerId : userData.customerId, status : "Y", isCheckout : 1})
+
+                    let menuQuantityInCart = 0
+
+                    if(isExistInCart){
+                        const isMenuExistInCart = _.filter(isExistInCart.menus, product => product.menuId.toString() === favoriteLists[i].menuId._id.toString())
+                                    
+                        if(isMenuExistInCart.length > 0){
+                            menuQuantityInCart = isMenuExistInCart[0].menuQuantity
+                        }
+                    }
+                    //#endregion
+
+                    let obj = {
+                        ...favoriteLists[i].toObject(),
+                        cartMenuQuantity : menuQuantityInCart
+                    }
+
+                    favoriteRestaurantLists.push(obj)
                 }
                 //#endregion
+
+                //cart id
+                const customerCartTotal = await Cart.findOne({customerId : userData.customerId, status : 'Y', isCheckout : 1})
     
                 return{
                     success: true,
                     STATUSCODE: 200,
                     message: 'Favorite restaurant list fetch successfully.',
-                    response_data: favoriteLists
+                    response_data: {
+                        cartId : customerCartTotal ? customerCartTotal._id : '',
+                        list : favoriteRestaurantLists
+                    }
                 }
             }else{
                 return{
                     success: true,
                     STATUSCODE: 200,
                     message: 'No favorite restaurant list found.',
-                    response_data: []
+                    response_data: {}
                 }
             }
         } catch (error) {
@@ -1867,7 +1872,7 @@ module.exports = {
         try {
             if(data){
                 const pendingCartDetail = await Cart.findOne({customerId : data.customerId, status : 'Y', isCheckout : 1})
-                .populate('menus.menuId', {_id : 0, menuImage : 1, itemName : 1, type : 1  })
+                .populate('menus.menuId')
 
                 if(pendingCartDetail){
                     _.forEach(pendingCartDetail.menus, (itemValue) => {
