@@ -19,7 +19,7 @@ var app = express();
 app.use(cors());
 
 //======== Create Server Starts =======//
-
+console.log(hostName, 'hostname')
 if (hostName == 'nodeserver.brainiuminfotech.com') {
     var credentials = {
         key: fs.readFileSync('/etc/letsencrypt/live/nodeserver.mydevfactory.com/privkey.pem', 'utf8'),
@@ -41,9 +41,19 @@ app.use(logger('dev'));
 // app.use(express.json({ extended: true, limit: '200000kb', parameterLimit: 200000 * 100 }));
 // app.use(express.urlencoded({ extended: true, limit: '200000kb', parameterLimit: 200000 * 100 }));
     
-app.use(bodyParser.json({extended: true, limit: '200000kb', parameterLimit: 200000 * 100}));
-app.use(bodyParser.urlencoded({extended: true, limit: '200000kb', parameterLimit: 200000 * 100}));
-app.use(fileUpload());
+// app.use(bodyParser.json({extended: true}));
+// app.use(bodyParser.urlencoded({}));
+// app.use(fileUpload());
+app.use(bodyParser.urlencoded({ extended: true}));
+app.use(bodyParser.json())
+app.use(fileUpload({
+  limits : {
+    fileSize : 5000000  //5mb
+  },
+  abortOnLimit : true,
+  responseOnLimit : "File size maximum 5MB"
+}));
+
 //====== Add Middleware for Rest Ends ======//
 
 app.use(cookieParser());

@@ -17,308 +17,346 @@ const Cart = require("../../schema/Cart")
 module.exports = {
     //Customer 
     customerRegistration: (req, callBack) => {
-        if (req) {
-            var data = req.body;
-            var customerExistCheck = {};
-            var socialSignup = 0
-            if (data.socialId != '') {
-                socialSignup = 1;
-                customerExistCheck = { socialId: data.socialId };
-            } else {
-                customerExistCheck = { email: data.email, loginType: 'GENERAL' };
-            }
-            /** Check for customer existence */
-            userSchema.countDocuments(customerExistCheck).exec(function (err, count) {
-                if (err) {
-                    console.log(err);
-                    callBack({
-                        success: false,
-                        STATUSCODE: 500,
-                        message: 'Internal DB error',
-                        response_data: {}
-                    });
-                } if (count) {
-                    // console.log(count);
-
-                    if (socialSignup == 1) {
-                        callBack({
-                            success: false,
-                            STATUSCODE: 422,
-                            message: 'User already exists for this information.',
-                            response_data: {}
-                        });
-                    } else {
-                        callBack({
-                            success: false,
-                            STATUSCODE: 422,
-                            message: 'User already exists for this email',
-                            response_data: {}
-                        });
-                    }
-
+        try {
+            if (req) {
+                var data = req.body;
+                var customerExistCheck = {};
+                var socialSignup = 0
+                if (data.socialId != '') {
+                    socialSignup = 1;
+                    customerExistCheck = { socialId: data.socialId };
                 } else {
-                    if (data.socialId != '') {
-                        socialSignup = 1;
-                        customerExistCheck = { socialId: data.socialId };
-                    } else {
-                        socialSignup = 0;
-                        customerExistCheck = { phone: data.phone, loginType: 'GENERAL' };
-                    }
-                    userSchema.countDocuments(customerExistCheck).exec(async function (err, count) {
-                        if (err) {
-                            console.log(err);
-                            nextCb(null, {
-                                success: false,
-                                STATUSCODE: 500,
-                                message: 'Internal DB error',
-                                response_data: {}
-                            });
-
-                        } if (count) {
+                    customerExistCheck = { email: data.email, loginType: 'GENERAL' };
+                }
+                /** Check for customer existence */
+                userSchema.countDocuments(customerExistCheck).exec(function (err, count) {
+                    if (err) {
+                        console.log(err);
+                        callBack({
+                            success: false,
+                            STATUSCODE: 500,
+                            message: 'Internal DB error',
+                            response_data: {}
+                        });
+                    } if (count) {
+                        // console.log(count);
+    
+                        if (socialSignup == 1) {
                             callBack({
                                 success: false,
                                 STATUSCODE: 422,
-                                message: 'User already exists for this phone',
+                                message: 'User already exists for this information.',
                                 response_data: {}
                             });
                         } else {
-
-                            var customerdata = {
-                                fullName: data.fullName,
-                                email: data.email,
-                                password: data.password,
-                                socialId: data.socialId,
-                                countryCode: data.countryCode,
-                                countryCodeId : data.countryCodeId,
-                                phone: data.phone,
-                                userType: 'CUSTOMER',
-                                loginType: data.loginType,
-                                deviceToken : data.deviceToken,
-                                appType : data.appType
-                            };
-
-                            if (socialSignup == 1) {
-                                customerdata.status = 'ACTIVE';
+                            callBack({
+                                success: false,
+                                STATUSCODE: 422,
+                                message: 'User already exists for this email',
+                                response_data: {}
+                            });
+                        }
+    
+                    } else {
+                        if (data.socialId != '') {
+                            socialSignup = 1;
+                            customerExistCheck = { socialId: data.socialId };
+                        } else {
+                            socialSignup = 0;
+                            customerExistCheck = { phone: data.phone, loginType: 'GENERAL' };
+                        }
+                        userSchema.countDocuments(customerExistCheck).exec(async function (err, count) {
+                            if (err) {
+                                console.log(err);
+                                nextCb(null, {
+                                    success: false,
+                                    STATUSCODE: 500,
+                                    message: 'Internal DB error',
+                                    response_data: {}
+                                });
+    
+                            } if (count) {
+                                callBack({
+                                    success: false,
+                                    STATUSCODE: 422,
+                                    message: 'User already exists for this phone',
+                                    response_data: {}
+                                });
                             } else {
-                                customerdata.status = 'INACTIVE';
-                            }
-
-                            new userSchema(customerdata).save(async function (err, result) {
-                                if (err) {
-                                    console.log(err);
-                                    callBack({
-                                        success: false,
-                                        STATUSCODE: 500,
-                                        message: 'Internal DB error',
-                                        response_data: {}
-                                    });
+    
+                                var customerdata = {
+                                    fullName: data.fullName,
+                                    email: data.email,
+                                    password: data.password,
+                                    socialId: data.socialId,
+                                    countryCode: data.countryCode,
+                                    countryCodeId : data.countryCodeId,
+                                    phone: data.phone,
+                                    userType: 'CUSTOMER',
+                                    loginType: data.loginType,
+                                    deviceToken : data.deviceToken,
+                                    appType : data.appType
+                                };
+    
+                                if (socialSignup == 1) {
+                                    customerdata.status = 'ACTIVE';
                                 } else {
-                                    if (socialSignup == 1) { //IF SOCIAL THEN NO VERIFICATION
-
-                                        mail('userRegistrationMail')(data.email, {}).send();
-
-                                        //ADD DATA IN USER LOGIN DEVICE TABLE
-                                        var userDeviceData = {
-                                            userId: result._id,
-                                            userType: 'CUSTOMER',
-                                            appType: data.appType,
-                                            pushMode: data.pushMode,
-                                            deviceToken: data.deviceToken
-                                        }
-                                        new userDeviceLoginSchema(userDeviceData).save(async function (err, success) {
-                                            if (err) {
-                                                console.log(err);
-                                                nextCb(null, {
-                                                    success: false,
-                                                    STATUSCODE: 500,
-                                                    message: 'Internal DB error',
-                                                    response_data: {}
-                                                });
-                                            } else {
-
-                                                //#region Image Upload for social
-                                                if(data.image != '' || data.image != undefined){
-                                                    const download = require('image-downloader')
-
-                                                    // Download to a directory and save with the original filename
-                                                    const options = {
-                                                        url: data.image,
-                                                        dest: `public/img/profile-pic/`   // Save to /path/to/dest/image.jpg
-                                                    }
-
-                                                    const FileType = require('file-type');
-
-                                                    download.image(options)
-                                                    .then(({ filename, image }) => {
-                                                        (async () => {
-                                                            var fileInfo = await FileType.fromFile(filename);
-                                                            var fileExt = fileInfo.ext;
-
-                                                            var fs = require('fs');
-
-                                                            var file_name = `customerimage-${Math.floor(Math.random() * 1000)}-${Math.floor(Date.now() / 1000)}.${fileExt}`;
-
-                                                            let image_path = `public/img/profile-pic/${file_name}`;
-
-                                                            fs.rename(filename, image_path, function (err) { //RENAME THE FILE
-                                                                if (err) console.log('ERROR: ' + err);
-                                                            })
-
-                                                            //#region update profile image of registered customer
-                                                            const updateCustomerProfileImage = await userSchema.findByIdAndUpdate(result._id,{
-                                                                profileImage : file_name
-                                                            })
-                                                            //#endregion
-
-                                                            if(updateCustomerProfileImage){
-                                                                var loginId = success._id;
-
-                                                                const authToken = generateToken(result);
-                                                                let response = {
-                                                                    userDetails: {
-                                                                        fullName: result.fullName,
-                                                                        email: result.email,
-                                                                        countryCode: result.countryCode,
-                                                                        phone: result.phone.toString(),
-                                                                        socialId: result.socialId,
-                                                                        customerId: result._id,
-                                                                        loginId: loginId,
-                                                                        profileImage: `${config.serverhost}:${config.port}/img/profile-pic/` + file_name,
-                                                                        userType: 'CUSTOMER',
-                                                                        loginType: data.loginType
-                                                                    },
-                                                                    authToken: authToken
-                                                                }
-
-                                                                callBack({
-                                                                    success: true,
-                                                                    STATUSCODE: 200,
-                                                                    message: 'User registered successfully.',
-                                                                    response_data: response
-                                                                })
-                                                            }
-
-                                                        })();
-                                                    })
-                                                }
-                                                //#endregion
-                                            }
+                                    customerdata.status = 'INACTIVE';
+                                }
+    
+                                new userSchema(customerdata).save(async function (err, result) {
+                                    if (err) {
+                                        console.log(err);
+                                        callBack({
+                                            success: false,
+                                            STATUSCODE: 500,
+                                            message: 'Internal DB error',
+                                            response_data: {}
                                         });
-
                                     } else {
-                                        //#region image upload
-                                        if(req.files != null){
-                                            //Get image extension
-                                            var ext = getExtension(req.files.image.name);
-
-                                            // The name of the input field (i.e. "image") is used to retrieve the uploaded file
-                                            let sampleFile = req.files.image;
-
-                                            var file_name = `customerimage-${Math.floor(Math.random() * 1000)}${Math.floor(Date.now() / 1000)}.${ext}`;
-
-                                            result.profileImage = file_name
-
-                                            // Use the mv() method to place the file somewhere on your server
-                                            sampleFile.mv(`public/img/profile-pic/${file_name}`, async function (err) {
+                                        if (socialSignup == 1) { //IF SOCIAL THEN NO VERIFICATION
+    
+                                            mail('userRegistrationMail')(data.email, {}).send();
+    
+                                            //ADD DATA IN USER LOGIN DEVICE TABLE
+                                            var userDeviceData = {
+                                                userId: result._id,
+                                                userType: 'CUSTOMER',
+                                                appType: data.appType,
+                                                pushMode: data.pushMode,
+                                                deviceToken: data.deviceToken
+                                            }
+                                            new userDeviceLoginSchema(userDeviceData).save(async function (err, success) {
                                                 if (err) {
                                                     console.log(err);
-                                                    callBack({
+                                                    nextCb(null, {
                                                         success: false,
                                                         STATUSCODE: 500,
-                                                        message: 'Internal error',
+                                                        message: 'Internal DB error',
                                                         response_data: {}
                                                     });
                                                 } else {
-                                                    //#region update profile image of registered customer
-                                                    const updateCustomerProfileImage = await userSchema.findByIdAndUpdate(result._id,{
-                                                        profileImage : file_name
-                                                    })
+    
+                                                    //#region Image Upload for social
+                                                    if(data.image != '' || data.image != undefined){
+                                                        const download = require('image-downloader')
+    
+                                                        // Download to a directory and save with the original filename
+                                                        const options = {
+                                                            url: data.image,
+                                                            dest: `public/img/profile-pic/`   // Save to /path/to/dest/image.jpg
+                                                        }
+    
+                                                        const FileType = require('file-type');
+    
+                                                        download.image(options)
+                                                        .then(({ filename, image }) => {
+                                                            (async () => {
+                                                                var fileInfo = await FileType.fromFile(filename);
+                                                                var fileExt = fileInfo.ext;
+    
+                                                                var fs = require('fs');
+    
+                                                                var file_name = `customerimage-${Math.floor(Math.random() * 1000)}-${Math.floor(Date.now() / 1000)}.${fileExt}`;
+    
+                                                                let image_path = `public/img/profile-pic/${file_name}`;
+    
+                                                                fs.rename(filename, image_path, function (err) { //RENAME THE FILE
+                                                                    if (err) console.log('ERROR: ' + err);
+                                                                })
+    
+                                                                //#region update profile image of registered customer
+                                                                const updateCustomerProfileImage = await userSchema.findByIdAndUpdate(result._id,{
+                                                                    profileImage : file_name
+                                                                })
+                                                                //#endregion
+    
+                                                                if(updateCustomerProfileImage){
+                                                                    var loginId = success._id;
+    
+                                                                    const authToken = generateToken(result);
+                                                                    let response = {
+                                                                        userDetails: {
+                                                                            fullName: result.fullName,
+                                                                            email: result.email,
+                                                                            countryCode: result.countryCode,
+                                                                            phone: result.phone.toString(),
+                                                                            socialId: result.socialId,
+                                                                            customerId: result._id,
+                                                                            loginId: loginId,
+                                                                            profileImage: `${config.serverhost}:${config.port}/img/profile-pic/` + file_name,
+                                                                            userType: 'CUSTOMER',
+                                                                            loginType: data.loginType
+                                                                        },
+                                                                        authToken: authToken
+                                                                    }
+    
+                                                                    callBack({
+                                                                        success: true,
+                                                                        STATUSCODE: 200,
+                                                                        message: 'User registered successfully.',
+                                                                        response_data: response
+                                                                    })
+                                                                }
+    
+                                                            })();
+                                                        })
+                                                    }
                                                     //#endregion
                                                 }
                                             });
-                                        }
-                                        
-                                        //#endregion
-
-                                        //ADD DATA IN USER LOGIN DEVICE TABLE
-                                        var userDeviceData = {
-                                            userId: result._id,
-                                            userType: 'CUSTOMER',
-                                            appType: data.appType,
-                                            pushMode: data.pushMode,
-                                            deviceToken: data.deviceToken
-                                        }
-
-                                        const success = new userDeviceLoginSchema(userDeviceData).save() 
-
-                                        var loginId = success._id;
-
-                                        const authToken = generateToken(result);
-                                        const userOtp = await sendVerificationCode(result);
-
-                                        //#region Sent user OTP to email
-                                        let generateRegisterOTP = generateOTP()
-                                        if(generateRegisterOTP != ''){
-                                            //#region save OTP to DB
-                                            const addedOTPToTable = new OTPLog({
-                                                userId : result._id,
-                                                email : result.email,
-                                                otp : generateRegisterOTP,
-                                                usedFor : "Registration",
-                                                status : 1
-                                            })
-                                            const savetoDB = await addedOTPToTable.save()
-                                            //#endregion
-                                        }
-                                        //#endregion
-
-                                        let response = {
-                                            userDetails: {
-                                                fullName: result.fullName,
-                                                email: result.email,
-                                                countryCode: result.countryCode,
-                                                countryCodeId : result.countryCodeId,
-                                                phone: result.phone.toString(),
-                                                socialId: result.socialId,
-                                                customerId: result._id,
-                                                loginId: loginId,
-                                                profileImage: `${config.serverhost}:${config.port}/img/profile-pic/` + result.profileImage,
+    
+                                        } else {
+    
+                                            //ADD DATA IN USER LOGIN DEVICE TABLE
+                                            var userDeviceData = {
+                                                userId: result._id,
                                                 userType: 'CUSTOMER',
-                                                loginType: data.loginType,
-                                                sid: userOtp.serviceSid,
-                                                otp : generateRegisterOTP
-                                            },
-                                            authToken: authToken
+                                                appType: data.appType,
+                                                pushMode: data.pushMode,
+                                                deviceToken: data.deviceToken
+                                            }
+    
+                                            const success = await new userDeviceLoginSchema(userDeviceData).save()
+    
+                                            const loginId = success._id;
+                                            console.log(loginId, 'loginId')
+    
+                                            const authToken = generateToken(result);
+                                            const userOtp = await sendVerificationCode(result);
+    
+                                            //#region Sent user OTP to email
+                                            let generateRegisterOTP = generateOTP()
+                                            if(generateRegisterOTP != ''){
+                                                //#region save OTP to DB
+                                                const addedOTPToTable = new OTPLog({
+                                                    userId : result._id,
+                                                    email : result.email,
+                                                    otp : generateRegisterOTP,
+                                                    usedFor : "Registration",
+                                                    status : 1
+                                                })
+                                                const savetoDB = await addedOTPToTable.save()
+                                                //#endregion
+                                            }
+                                            //#endregion
+    
+                                            let response = {
+                                                userDetails: {
+                                                    fullName: result.fullName,
+                                                    email: result.email,
+                                                    countryCode: result.countryCode,
+                                                    countryCodeId : result.countryCodeId,
+                                                    phone: result.phone.toString(),
+                                                    socialId: result.socialId,
+                                                    customerId: result._id,
+                                                    loginId: loginId,
+                                                    profileImage: `${config.serverhost}:${config.port}/img/profile-pic/` + result.profileImage,
+                                                    userType: 'CUSTOMER',
+                                                    loginType: data.loginType,
+                                                    sid: userOtp.serviceSid,
+                                                    otp : generateRegisterOTP
+                                                },
+                                                authToken: authToken
+                                            }
+    
+                                            // var resUser = {
+                                            //     userId: result._id,
+                                            //     sid: userOtp.serviceSid
+                                            // }
+    
+    
+                                            var verifyMsg = 'Please check your phone. We have sent a code to be used to verify your account.';
+    
+                                            /** Send Registration Email */
+                                            mail('sendOTPdMail')(response.userDetails.email, response.userDetails).send();
+
+                                            if(req.files != null){
+                                                //Get image extension
+                                                var ext = getExtension(req.files.image.name);
+    
+                                                // The name of the input field (i.e. "image") is used to retrieve the uploaded file
+                                                let sampleFile = req.files.image;
+    
+                                                var file_name = `customerimage-${Math.floor(Math.random() * 1000)}${Math.floor(Date.now() / 1000)}.${ext}`;
+    
+                                                result.profileImage = file_name
+    
+                                                // Use the mv() method to place the file somewhere on your server
+                                                sampleFile.mv(`public/img/profile-pic/${file_name}`, async function (err) {
+                                                    if (err) {
+                                                        console.log(err);
+                                                        callBack({
+                                                            success: false,
+                                                            STATUSCODE: 500,
+                                                            message: 'Internal error',
+                                                            response_data: {}
+                                                        });
+                                                    } else {
+                                                        //#region update profile image of registered customer
+                                                        const updateCustomerProfileImage = await userSchema.updateOne({_id : result._id},{
+                                                            $set : {
+                                                                profileImage : file_name
+                                                            }
+                                                        })
+                                                        //#endregion
+
+                                                        const fetchUser = await userSchema.findById(result._id)
+                                                        let response = {
+                                                            userDetails: {
+                                                                fullName: fetchUser.fullName,
+                                                                email: fetchUser.email,
+                                                                countryCode: fetchUser.countryCode,
+                                                                countryCodeId : fetchUser.countryCodeId,
+                                                                phone: fetchUser.phone.toString(),
+                                                                socialId: fetchUser.socialId,
+                                                                customerId: fetchUser._id,
+                                                                loginId: loginId,
+                                                                profileImage: `${config.serverhost}:${config.port}/img/profile-pic/` + fetchUser.profileImage,
+                                                                userType: 'CUSTOMER',
+                                                                loginType: data.loginType,
+                                                                sid: userOtp.serviceSid,
+                                                                otp : generateRegisterOTP
+                                                            },
+                                                            authToken: authToken
+                                                        }
+
+                                                        callBack({
+                                                            success: true,
+                                                            STATUSCODE: 200,
+                                                            message: verifyMsg,
+                                                            response_data: response
+                                                        });
+                                                    }
+                                                });
+                                            }else{
+                                                callBack({
+                                                    success: true,
+                                                    STATUSCODE: 200,
+                                                    message: verifyMsg,
+                                                    response_data: response
+                                                });
+                                            }
                                         }
-
-                                        // var resUser = {
-                                        //     userId: result._id,
-                                        //     sid: userOtp.serviceSid
-                                        // }
-
-
-                                        var verifyMsg = 'Please check your phone. We have sent a code to be used to verify your account.';
-
-                                        /** Send Registration Email */
-                                        mail('sendOTPdMail')(response.userDetails.email, response.userDetails).send();
-
-                                        callBack({
-                                            success: true,
-                                            STATUSCODE: 200,
-                                            message: verifyMsg,
-                                            response_data: response
-                                        });
+    
                                     }
-
-                                }
-                            });
-
-                        }
-                    });
-                }
+                                });
+    
+                            }
+                        });
+                    }
+                });
+    
+    
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            callBack({
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error',
+                response_data: {}
             });
-
-
         }
     },
 
@@ -751,7 +789,7 @@ module.exports = {
 
                             callBack({
                                 success: true,
-                                STATUSCODE: 200,
+                                STATUSCODE: 410,
                                 message: verifyMsg,
                                 response_data: response
                             });
@@ -1309,9 +1347,27 @@ module.exports = {
                                 /**Create Top dishes based on number of favorite count */
                                 const getCount = await FavoriteMenu.countDocuments({menuId : getRestaurantMenuLists[j]._id})
                                 if(getCount >= 3){
+
+                                    /**Checking cart details */
+                                    const isExistInCart = await Cart.findOne({customerId : customerId, status : "Y", isCheckout : 1})
+
+                                    let menuQuantityInCart = 0
+
+                                    if(isExistInCart){
+                                        const isMenuExistInCart = _.filter(isExistInCart.menus, product => product.menuId.toString() === getRestaurantMenuLists[j]._id.toString())
+                                        
+
+                                        if(isMenuExistInCart.length > 0){
+                                            menuQuantityInCart = isMenuExistInCart[0].menuQuantity
+                                        }
+                                    }
+                                     
+                                    /**End */
+
                                     const topDishesResponse = {
                                         ...getRestaurantMenuLists[j].toObject(),
-                                        isFavorite : isFavorite != null ? 1 : 0
+                                        isFavorite : isFavorite != null ? 1 : 0,
+                                        cartMenuQuantity : menuQuantityInCart
                                     }
                                     topDishes.push(topDishesResponse)
                                 }
@@ -1344,12 +1400,10 @@ module.exports = {
                                 if(mealWiseMenuArray.length > 0){
                                     for(let m = 0; m < mealWiseMenuArray.length; m++){
                                         let menuQuantityInCart = 0
-                                        // console.log(mealWiseMenuArray[m]._id, 'menu id')
                                         /**check menu is exist in cart or not */
                                         const isExistInCart = await Cart.findOne({customerId : customerId, status : "Y", isCheckout : 1})
 
                                         if(isExistInCart){
-                                            // console.log(isExistInCart.menus, 'isExistInCart.menus')
                                             const isMenuExistInCart = _.filter(isExistInCart.menus, product => product.menuId.toString() === mealWiseMenuArray[m]._id.toString())
 
                                             if(isMenuExistInCart.length > 0){
@@ -1396,7 +1450,8 @@ module.exports = {
                             cartMenuCount = cartMenuCount + customerCartTotal.menus[i].menuQuantity
                         }
                     }
-                    response_data.cartTotal = cartMenuCount
+                    response_data.cartCountTotal = cartMenuCount
+                    response_data.cartId = customerCartTotal ? customerCartTotal._id : ''
 
                     callBack({
                         success: true,
@@ -1470,19 +1525,37 @@ module.exports = {
                                 const isFavorite = await FavoriteMenu.findOne({menuId : getRestaurantMenuLists[j]._id, customerId : customerId})
                                 /** end */
 
+                                /**Checking cart details */
+                                const isExistInCart = await Cart.findOne({customerId : customerId, status : "Y", isCheckout : 1})
+
+                                let menuQuantityInCart = 0
+
+                                if(isExistInCart){
+                                    const isMenuExistInCart = _.filter(isExistInCart.menus, product => product.menuId.toString() === getRestaurantMenuLists[j]._id.toString())
+                                    
+
+                                    if(isMenuExistInCart.length > 0){
+                                        menuQuantityInCart = isMenuExistInCart[0].menuQuantity
+                                    }
+                                }
+                                 
+                                /**End */
+
                                 const finalMenusResponse = {
                                     ...getRestaurantMenuLists[j].toObject(),
-                                    isFavorite : isFavorite != null ? 1 : 0
+                                    isFavorite : isFavorite != null ? 1 : 0,
+                                    cartMenuQuantity : menuQuantityInCart
                                 }
 
                                 allRestaurantMenus.push(finalMenusResponse)
 
                                 /**Create Top dishes based on number of favorite count */
                                 const getCount = await FavoriteMenu.countDocuments({menuId : getRestaurantMenuLists[j]._id})
-                                if(getCount >= 3){
+                                if(getCount >= 3){                                    
                                     const topDishesResponse = {
                                         ...getRestaurantMenuLists[j].toObject(),
-                                        isFavorite : isFavorite != null ? 1 : 0
+                                        isFavorite : isFavorite != null ? 1 : 0,
+                                        cartMenuQuantity : menuQuantityInCart
                                     }
                                     topDishes.push(topDishesResponse)
                                 }
@@ -1529,6 +1602,17 @@ module.exports = {
                         //Category Data
                         response_data.category_data = await Category.find({})
                         response_data.category_imageUrl = `${config.serverhost}:${config.port}/img/category/`;
+
+                        //cart total
+                        const customerCartTotal = await Cart.findOne({customerId, status : 'Y', isCheckout : 1})
+                        let cartMenuCount = 0
+                        if(customerCartTotal){
+                            for(let i = 0; i < customerCartTotal.menus.length; i++){
+                                cartMenuCount = cartMenuCount + customerCartTotal.menus[i].menuQuantity
+                            }
+                        }
+                        response_data.cartCountTotal = cartMenuCount
+                        response_data.cartId = customerCartTotal ? customerCartTotal._id : ''
 
                         return {
                             success: true,
@@ -1783,7 +1867,7 @@ module.exports = {
         try {
             if(data){
                 const pendingCartDetail = await Cart.findOne({customerId : data.customerId, status : 'Y', isCheckout : 1})
-                .populate('menus.menuId', {_id : 0, menuImage : 1, itemName : 1  })
+                .populate('menus.menuId', {_id : 0, menuImage : 1, itemName : 1, type : 1  })
 
                 if(pendingCartDetail){
                     _.forEach(pendingCartDetail.menus, (itemValue) => {
