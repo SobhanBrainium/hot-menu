@@ -1378,6 +1378,8 @@ module.exports = {
 
                     let fullArrayWithMealList = []
 
+                    const categoryDataList = await Category.find({})
+
                     /**Make menu meal wise */
                     if(allRestaurantMenus.length > 0){
                         const getMealList = await MealType.find()
@@ -1429,36 +1431,49 @@ module.exports = {
                             }
 
                         }
-                    }
-                    /**End */
 
-                    //toDaysMenu
-                    response_data.toDaysMenu = fullArrayWithMealList
+                         //toDaysMenu
+                        response_data.toDaysMenu = fullArrayWithMealList
 
-                    //top dishes
-                    response_data.topDishes = topDishes
+                        //top dishes
+                        response_data.topDishes = topDishes
 
-                    //Category Data
-                    response_data.category_data = await Category.find({})
-                    response_data.category_imageUrl = `${config.serverhost}:${config.port}/img/category/`;
+                        //Category Data
+                        response_data.category_data = categoryDataList
+                        response_data.category_imageUrl = `${config.serverhost}:${config.port}/img/category/`;
 
-                    //cart total
-                    const customerCartTotal = await Cart.findOne({customerId, status : 'Y', isCheckout : 1})
-                    let cartMenuCount = 0
-                    if(customerCartTotal){
-                        for(let i = 0; i < customerCartTotal.menus.length; i++){
-                            cartMenuCount = cartMenuCount + customerCartTotal.menus[i].menuQuantity
+                        //cart total
+                        const customerCartTotal = await Cart.findOne({customerId, status : 'Y', isCheckout : 1})
+                        let cartMenuCount = 0
+                        if(customerCartTotal){
+                            for(let i = 0; i < customerCartTotal.menus.length; i++){
+                                cartMenuCount = cartMenuCount + customerCartTotal.menus[i].menuQuantity
+                            }
+                        }
+                        response_data.cartCountTotal = cartMenuCount
+                        response_data.cartId = customerCartTotal ? customerCartTotal._id : ''
+
+                        callBack({
+                            success: true,
+                            STATUSCODE: 200,
+                            message: `${allRestaurantMenus.length} menus has been successfully found.`,
+                            response_data: response_data
+                        })
+                    }else{
+                        return {
+                            success: true,
+                            STATUSCODE: 200,
+                            message: 'No menus found.',
+                            response_data: {
+                                toDaysMenu : [],
+                                topDishes : [],
+                                category_data : categoryDataList,
+                                category_imageUrl : `${config.serverhost}:${config.port}/img/category/`,
+                                cartCountTotal : 0,
+                                cartId : ''
+                            }
                         }
                     }
-                    response_data.cartCountTotal = cartMenuCount
-                    response_data.cartId = customerCartTotal ? customerCartTotal._id : ''
-
-                    callBack({
-                        success: true,
-                        STATUSCODE: 200,
-                        message: `${allRestaurantMenus.length} menus has been successfully found.`,
-                        response_data: response_data
-                    })
                 }else{
                     callBack({
                         success: true,
@@ -1566,6 +1581,9 @@ module.exports = {
 
                     let fullArrayWithMealList = []
 
+                    /**category data */
+                    const categoryDataList = await Category.find({})
+
                     /**Make menu meal wise */
                     if(allRestaurantMenus.length > 0){
                         const getMealList = await MealType.find()
@@ -1600,7 +1618,7 @@ module.exports = {
                         response_data.topDishes = topDishes
 
                         //Category Data
-                        response_data.category_data = await Category.find({})
+                        response_data.category_data = categoryDataList
                         response_data.category_imageUrl = `${config.serverhost}:${config.port}/img/category/`;
 
                         //cart total
@@ -1625,7 +1643,14 @@ module.exports = {
                             success: true,
                             STATUSCODE: 200,
                             message: 'No menus found.',
-                            response_data: {}
+                            response_data: {
+                                toDaysMenu : [],
+                                topDishes : [],
+                                category_data : categoryDataList,
+                                category_imageUrl : `${config.serverhost}:${config.port}/img/category/`,
+                                cartCountTotal : 0,
+                                cartId : ''
+                            }
                         }
                     }
                     /**End */
@@ -1825,45 +1850,77 @@ module.exports = {
                     menuQuantity : Number(data.menuQuantity),
                     menuTotal : parseFloat(parseFloat(data.menuAmount) * Number(data.menuQuantity))
                 }
-                
-                const userCartInfo = await Cart.findOne({customerId : data.customerId, isCheckout : 1, status : 'Y'})
-                /**check customer is already exist in cart or not. If exist then update menu object otherwise insert new menu */
-                if(userCartInfo){
-                    // update menu object
-                    userCartInfo.menus.unshift(menuObj)
-                    userCartInfo.cartTotal = parseFloat(userCartInfo.cartTotal + menuObj.menuTotal)
 
-                    const result = await userCartInfo.save()
+                /** Check menu id is present or not */
+                const isMenuPresent = await RestaurantMenu.findById(data.menuId)
+                if(isMenuPresent){
+                    const userCartInfo = await Cart.findOne({customerId : data.customerId, isCheckout : 1, status : 'Y'})
+                    /**check customer is already exist in cart or not. If exist then update menu object otherwise insert new menu */
+                    if(userCartInfo){
+                        /**check menu is already in cart or not */
+                        const filterData = _.filter(userCartInfo.menus, item => item.menuId.toString() == data.menuId.toString())
 
-                    const addToCartResponse = await Cart.findOne({customerId : data.customerId, status : 'Y', isCheckout : 1})
-                    .populate('menus.menuId')
+                        if(filterData.length > 0){
+                            return{
+                                success: false,
+                                STATUSCODE : 403,
+                                message : "This menu is already present in cart.",
+                                response_data : {}
+                            }
+                        }else{
+                            // update menu object
+                            userCartInfo.menus.unshift(menuObj)
+                            userCartInfo.cartTotal = parseFloat(userCartInfo.cartTotal + menuObj.menuTotal)
 
-                    if(addToCartResponse){
-                        _.forEach(addToCartResponse.menus, (itemValue) => {
-                            itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/menu-pic/` + itemValue.menuId.menuImage
+                            const result = await userCartInfo.save()
+
+                            const addToCartResponse = await Cart.findOne({customerId : data.customerId, status : 'Y', isCheckout : 1})
+                            .populate('menus.menuId')
+
+                            if(addToCartResponse){
+                                _.forEach(addToCartResponse.menus, (itemValue) => {
+                                    itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/menu-pic/` + itemValue.menuId.menuImage
+                                })
+            
+                                return {
+                                    success: true,
+                                    STATUSCODE : 200,
+                                    message : "Menu has been successfully added to cart.",
+                                    response_data : addToCartResponse
+                                }
+                            }
+                        }
+                    }else{
+                        /**New menu added in cart */
+                        const itemAddedObj = new Cart({
+                            customerId : data.customerId,
+                            menus : menuObj,
+                            cartTotal : menuObj.menuTotal
                         })
-    
-                        return {
-                            success: true,
-                            STATUSCODE : 200,
-                            message : "Menu has been successfully added to cart.",
-                            response_data : addToCartResponse
+                        const result = await itemAddedObj.save()
+
+                        const addToCartResponse = await Cart.findOne({customerId : data.customerId, status : 'Y', isCheckout : 1})
+                        .populate('menus.menuId')
+
+                        if(addToCartResponse){
+                            _.forEach(addToCartResponse.menus, (itemValue) => {
+                                itemValue.menuId.menuImage =  `${config.serverhost}:${config.port}/img/menu-pic/` + itemValue.menuId.menuImage
+                            })
+        
+                            return {
+                                success: true,
+                                STATUSCODE : 200,
+                                message : "Menu has been successfully added to cart.",
+                                response_data : addToCartResponse
+                            }
                         }
                     }
                 }else{
-                    /**New menu added in cart */
-                    const itemAddedObj = new Cart({
-                        customerId : data.customerId,
-                        menus : menuObj,
-                        cartTotal : menuObj.menuTotal
-                    })
-                    const result = await itemAddedObj.save()
-    
-                    return {
-                        success: true,
-                        STATUSCODE : 200,
-                        message : "Menu has been successfully added to cart.",
-                        response_data : result
+                    return{
+                        success: false,
+                        STATUSCODE: 403,
+                        message: 'You have select wrong menu id.',
+                        response_data: {}
                     }
                 }
             }
