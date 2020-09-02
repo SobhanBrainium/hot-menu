@@ -157,4 +157,18 @@ customerApi.post("/removeCartItem", jwtTokenValidator.validateToken, customerVal
 })
 //#endregion
 
+//#region add rating on menu
+customerApi.post("/addRating", jwtTokenValidator.validateToken, customerValidator.addRating, async(req, res) => {
+    const result = await registerService.addRating(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region menu wise rating list
+customerApi.post("/ratingList", jwtTokenValidator.validateToken, customerValidator.ratingList, async(req, res) => {
+    const result = await registerService.ratingList(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
 module.exports = customerApi;

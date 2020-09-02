@@ -13,6 +13,7 @@ const _ = require("lodash")
 const OTPLog = require("../../schema/OTPLog")
 const MealType = require("../../schema/MealType")
 const Cart = require("../../schema/Cart")
+const Rating = require("../../schema/Rating")
 
 module.exports = {
     //Customer 
@@ -2102,6 +2103,82 @@ module.exports = {
                     STATUSCODE : 200,
                     message : "Record not found.",
                     response_data: {}
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
+    },
+    addRating : async (data) => {
+        try {
+            if(data){
+                const isExist = await Rating.findOne({menuId : data.menuId, customerId : data.customerId})
+                if(isExist){
+                    return{
+                        success: false,
+                        STATUSCODE: 403,
+                        message: 'You have already rated for this menu.',
+                        response_data: {} 
+                    }
+                }
+
+                const addRatingObj = new Rating({
+                    menuId : data.menuId,
+                    customerId : data.customerId,
+                    rating : data.rating,
+                    review : data.review
+                })
+
+                const addedDataResp = await addRatingObj.save()
+
+                if(addedDataResp){
+                    return{
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'Rating successful.',
+                        response_data: addedDataResp
+                    }
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
+    },
+    ratingList : async (data) => {
+        try {
+            if(data){
+                const getRatingList = await Rating.find({menuId : data.menuId}).populate('customerId').sort({_id : -1})
+
+                if(getRatingList.length > 0){
+                    for(let i = 0; i < getRatingList.length; i++){
+                        getRatingList[i].customerId.profileImage = `${config.serverhost}:${config.port}/img/profile-pic/` + getRatingList[i].customerId.profileImage
+                    }
+
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'Rating found successfully.',
+                        response_data: getRatingList
+                    }
+                }else{
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'No rating found.',
+                        response_data: []
+                    }
                 }
             }
         } catch (error) {

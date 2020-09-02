@@ -366,5 +366,31 @@ module.exports = {
             const removeCartItem = await registerModel.removeCartItem(data)
             return removeCartItem
         }
+    },
+    addRating : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const addRating = await registerModel.addRating(data)
+            return addRating
+        }
+    },
+    ratingList : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const ratingList = await registerModel.ratingList(data)
+            return ratingList
+        }   
     }
 }
