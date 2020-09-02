@@ -2190,6 +2190,78 @@ module.exports = {
                 response_data: {}
             }
         }
+    },
+    searchMenu : async (data) => {
+        try {
+            if(data){
+                const searchList = await RestaurantMenu.find({itemName : {$regex : data.searchValue, $options: "i"}}).sort({itemName : 1})
+
+                if(searchList.length > 0){
+                    let favoriteRestaurantLists = []
+        
+                    //#region get restaurant distance
+                    for(let i = 0; i <searchList.length; i++){
+                        searchList[i].menuImage = `${config.serverhost}:${config.port}/img/menu-pic/${searchList[i].menuImage}`
+
+                        //#region get cart quantity
+                        const isExistInCart = await Cart.findOne({customerId : data.customerId, status : "Y", isCheckout : 1})
+    
+                        let menuQuantityInCart = 0
+                        let cartId = ''
+    
+                        if(isExistInCart){
+                            const isMenuExistInCart = _.filter(isExistInCart.menus, product => product.menuId.toString() === searchList[i]._id.toString())
+                                        
+                            if(isMenuExistInCart.length > 0){
+                                menuQuantityInCart = isMenuExistInCart[0].menuQuantity,
+                                cartId = isExistInCart._id
+                            }
+                        }
+                        //#endregion
+    
+                        let obj = {
+                            ...searchList[i].toObject(),
+                            cartMenuQuantity : menuQuantityInCart,
+                            cartId : cartId
+                        }
+    
+                        favoriteRestaurantLists.push(obj)
+                    }
+                    //#endregion
+    
+                    //cart id
+                    // const customerCartTotal = await Cart.findOne({customerId : data.customerId, status : 'Y', isCheckout : 1})
+        
+                    return{
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'List has been fetched successfully.',
+                        response_data: {
+                            // cartId : customerCartTotal ? customerCartTotal._id : '',
+                            list : favoriteRestaurantLists
+                        }
+                    }
+                }else{
+                    return{
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'No menus has been found.',
+                        response_data: {
+                            // cartId : '',
+                            list : []
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
     }
 }
 

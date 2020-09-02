@@ -171,4 +171,11 @@ customerApi.post("/ratingList", jwtTokenValidator.validateToken, customerValidat
 })
 //#endregion
 
+//#region menu search list
+customerApi.post("/searchMenu", jwtTokenValidator.validateToken, customerValidator.searchMenu, async(req, res) => {
+    const result = await registerService.searchMenu(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
 module.exports = customerApi;

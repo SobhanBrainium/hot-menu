@@ -392,5 +392,18 @@ module.exports = {
             const ratingList = await registerModel.ratingList(data)
             return ratingList
         }   
+    },
+    searchMenu : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const searchMenu = await registerModel.searchMenu(data)
+            return searchMenu
+        }
     }
 }
