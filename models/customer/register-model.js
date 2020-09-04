@@ -2258,6 +2258,15 @@ module.exports = {
             if(data){
                 const searchList = await RestaurantMenu.find({itemName : {$regex : data.searchValue, $options: "i"}}).sort({itemName : 1})
 
+                //cart total
+                const customerCartTotal = await Cart.findOne({customerId : data.customerId, status : 'Y', isCheckout : 1})
+                let cartMenuCount = 0
+                if(customerCartTotal){
+                    for(let i = 0; i < customerCartTotal.menus.length; i++){
+                        cartMenuCount = cartMenuCount + customerCartTotal.menus[i].menuQuantity
+                    }
+                }
+
                 if(searchList.length > 0){
                     let favoriteRestaurantLists = []
         
@@ -2314,16 +2323,13 @@ module.exports = {
                         favoriteRestaurantLists.push(obj)
                     }
                     //#endregion
-    
-                    //cart id
-                    // const customerCartTotal = await Cart.findOne({customerId : data.customerId, status : 'Y', isCheckout : 1})
-        
+
                     return{
                         success: true,
                         STATUSCODE: 200,
                         message: 'List has been fetched successfully.',
                         response_data: {
-                            // cartId : customerCartTotal ? customerCartTotal._id : '',
+                            cartCountTotal : cartMenuCount,
                             list : favoriteRestaurantLists
                         }
                     }
@@ -2333,7 +2339,7 @@ module.exports = {
                         STATUSCODE: 200,
                         message: 'No menus has been found.',
                         response_data: {
-                            // cartId : '',
+                            cartCountTotal : cartMenuCount,
                             list : []
                         }
                     }
