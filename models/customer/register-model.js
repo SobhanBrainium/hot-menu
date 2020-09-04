@@ -13,7 +13,8 @@ const _ = require("lodash")
 const OTPLog = require("../../schema/OTPLog")
 const MealType = require("../../schema/MealType")
 const Cart = require("../../schema/Cart")
-const Rating = require("../../schema/Rating")
+const Rating = require("../../schema/Rating");
+const { round } = require('lodash');
 
 module.exports = {
     //Customer 
@@ -1338,9 +1339,28 @@ module.exports = {
                                 const isFavorite = await FavoriteMenu.findOne({menuId : getRestaurantMenuLists[j]._id, customerId : customerId})
                                 /** end */
 
+                                /**get menu review total count*/
+                                const totalReviewCountOnly = await Rating.countDocuments({menuId : getRestaurantMenuLists[j]._id, review : {$ne : ''}})
+                                /**end */
+
+                                /**get menu avg. rating */
+                                const totalRatingCountOnly = await Rating.find({menuId : getRestaurantMenuLists[j]._id}, {rating : 1, _id : 0})
+                                let avgRating = 0
+                                if(totalRatingCountOnly.length > 0){
+                                    let totalRatingValue = 0
+                                    for(let i = 0; i < totalRatingCountOnly.length; i++){
+                                        const ratingValue = parseFloat(totalRatingCountOnly[i].rating)
+                                        totalRatingValue = totalRatingValue + ratingValue
+                                    }
+                                    avgRating = round(parseFloat(totalRatingValue / totalRatingCountOnly.length), 1)
+                                }
+                                /**end */
+
                                 const finalMenusResponse = {
                                     ...getRestaurantMenuLists[j].toObject(),
-                                    isFavorite : isFavorite != null ? 1 : 0
+                                    isFavorite : isFavorite != null ? 1 : 0,
+                                    review : totalReviewCountOnly > 0 ? totalReviewCountOnly : 0,
+                                    rating : avgRating
                                 }
 
                                 allRestaurantMenus.push(finalMenusResponse)
@@ -1368,6 +1388,8 @@ module.exports = {
                                     const topDishesResponse = {
                                         ...getRestaurantMenuLists[j].toObject(),
                                         isFavorite : isFavorite != null ? 1 : 0,
+                                        review : totalReviewCountOnly > 0 ? totalReviewCountOnly : 0,
+                                        rating : avgRating,
                                         cartMenuQuantity : menuQuantityInCart
                                     }
                                     topDishes.push(topDishesResponse)
@@ -1557,9 +1579,28 @@ module.exports = {
                                  
                                 /**End */
 
+                                /**get menu review total count*/
+                                const totalReviewCountOnly = await Rating.countDocuments({menuId : getRestaurantMenuLists[j]._id, review : {$ne : ''}})
+                                /**end */
+
+                                /**get menu avg. rating */
+                                const totalRatingCountOnly = await Rating.find({menuId : getRestaurantMenuLists[j]._id}, {rating : 1, _id : 0})
+                                let avgRating = 0
+                                if(totalRatingCountOnly.length > 0){
+                                    let totalRatingValue = 0
+                                    for(let i = 0; i < totalRatingCountOnly.length; i++){
+                                        const ratingValue = parseFloat(totalRatingCountOnly[i].rating)
+                                        totalRatingValue = totalRatingValue + ratingValue
+                                    }
+                                    avgRating = round(parseFloat(totalRatingValue / totalRatingCountOnly.length), 1)
+                                }
+                                /**end */
+
                                 const finalMenusResponse = {
                                     ...getRestaurantMenuLists[j].toObject(),
                                     isFavorite : isFavorite != null ? 1 : 0,
+                                    review : totalReviewCountOnly > 0 ? totalReviewCountOnly : 0,
+                                    rating : avgRating,
                                     cartMenuQuantity : menuQuantityInCart
                                 }
 
@@ -1571,6 +1612,8 @@ module.exports = {
                                     const topDishesResponse = {
                                         ...getRestaurantMenuLists[j].toObject(),
                                         isFavorite : isFavorite != null ? 1 : 0,
+                                        review : totalReviewCountOnly > 0 ? totalReviewCountOnly : 0,
+                                        rating : avgRating,
                                         cartMenuQuantity : menuQuantityInCart
                                     }
                                     topDishes.push(topDishesResponse)
@@ -1710,8 +1753,27 @@ module.exports = {
                     }
                     //#endregion
 
+                    /**get menu review total count*/
+                    const totalReviewCountOnly = await Rating.countDocuments({menuId : favoriteLists[i].menuId._id, review : {$ne : ''}})
+                    /**end */
+
+                    /**get menu avg. rating */
+                    const totalRatingCountOnly = await Rating.find({menuId : favoriteLists[i].menuId._id}, {rating : 1, _id : 0})
+                    let avgRating = 0
+                    if(totalRatingCountOnly.length > 0){
+                        let totalRatingValue = 0
+                        for(let i = 0; i < totalRatingCountOnly.length; i++){
+                            const ratingValue = parseFloat(totalRatingCountOnly[i].rating)
+                            totalRatingValue = totalRatingValue + ratingValue
+                        }
+                        avgRating = round(parseFloat(totalRatingValue / totalRatingCountOnly.length), 1)
+                    }
+                    /**end */
+
                     let obj = {
                         ...favoriteLists[i].toObject(),
+                        review : totalReviewCountOnly > 0 ? totalReviewCountOnly : 0,
+                        rating : avgRating,
                         cartMenuQuantity : menuQuantityInCart
                     }
 
@@ -2203,6 +2265,10 @@ module.exports = {
                     for(let i = 0; i <searchList.length; i++){
                         searchList[i].menuImage = `${config.serverhost}:${config.port}/img/menu-pic/${searchList[i].menuImage}`
 
+                        /** check favorite menu  */
+                        const isFavorite = await FavoriteMenu.findOne({menuId : searchList[i]._id, customerId : data.customerId})
+                        /** end */
+
                         //#region get cart quantity
                         const isExistInCart = await Cart.findOne({customerId : data.customerId, status : "Y", isCheckout : 1})
     
@@ -2218,9 +2284,29 @@ module.exports = {
                             }
                         }
                         //#endregion
+
+                        /**get menu review total count*/
+                        const totalReviewCountOnly = await Rating.countDocuments({menuId : searchList[i]._id, review : {$ne : ''}})
+                        /**end */
+
+                        /**get menu avg. rating */
+                        const totalRatingCountOnly = await Rating.find({menuId : searchList[i]._id}, {rating : 1, _id : 0})
+                        let avgRating = 0
+                        if(totalRatingCountOnly.length > 0){
+                            let totalRatingValue = 0
+                            for(let i = 0; i < totalRatingCountOnly.length; i++){
+                                const ratingValue = parseFloat(totalRatingCountOnly[i].rating)
+                                totalRatingValue = totalRatingValue + ratingValue
+                            }
+                            avgRating = round(parseFloat(totalRatingValue / totalRatingCountOnly.length), 1)
+                        }
+                        /**end */
     
                         let obj = {
                             ...searchList[i].toObject(),
+                            isFavorite : isFavorite != null ? 1 : 0,
+                            review : totalReviewCountOnly > 0 ? totalReviewCountOnly : 0,
+                            rating : avgRating,
                             cartMenuQuantity : menuQuantityInCart,
                             cartId : cartId
                         }
@@ -2259,7 +2345,7 @@ module.exports = {
                 success: false,
                 STATUSCODE: 500,
                 message: 'Internal DB error.',
-                response_data: {}
+                response_data: []
             }
         }
     }
