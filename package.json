@@ -11,17 +11,23 @@
     "async": "^3.1.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
+    "connect-flash": "^0.1.1",
     "cookie-parser": "~1.4.4",
+    "csurf": "^1.11.0",
     "cors": "^2.8.5",
     "cron": "^1.8.2",
     "cryptr": "^6.0.2",
     "debug": "~2.6.9",
     "express": "~4.16.1",
+    "express-handlebars": "^3.0.0",
+    "express-session": "^1.17.1",
     "express-fileupload": "^1.1.6",
     "express-validator": "^6.4.0",
     "file-type": "^14.7.0",
     "geolib": "^3.2.1",
-    "handlebars": "^4.7.6",
+    "handlebars-dateformat": "^1.1.1",
+    "handlebars-layouts": "^3.1.4",
+    "hbs": "^4.0.1",
     "image-downloader": "^3.6.0",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.20",
@@ -31,9 +37,12 @@
     "node-gcm": "^1.0.2",
     "nodemailer": "^6.4.2",
     "nodemailer-smtp-transport": "^2.7.4",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
     "twilio": "^3.48.1"
   },
   "devDependencies": {
+    "handlebars": "^4.5.0",
     "nodemon": "^2.0.2"
   }
 }
