@@ -1,0 +1,177 @@
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <div class="container-fluid">
+    <div class="row mb-2">
+        <div class="col-sm-6">
+        <h1>Order Detail</h1>
+        </div>
+        <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="/admin/dashboard">Home</a></li>
+            <li class="breadcrumb-item"><a href="/admin/restaurant/order/list">Order List</a></li>
+            <li class="breadcrumb-item active">Order Detail</li>
+        </ol>
+        </div>
+    </div>
+    </div><!-- /.container-fluid -->
+</section>
+
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+            <!-- general form elements disabled -->
+            <div class="card card-warning">
+              <div class="card-header">
+                <h3 class="card-title">Restaurant and Customer Detail</h3>
+              </div>
+              <!-- /.card-header -->
+              <div class="card-body">
+                <form role="form">
+                  <div class="row">
+                    <div class="col-sm-4">
+                      <!-- text input -->
+                      <div class="form-group">
+                        <label>Restaurant Name</label>
+                        <input type="text" class="form-control" placeholder="Enter ..." value="{{list.vendorId.restaurantName}}" readonly>
+                      </div>
+                    </div>
+                    <div class="col-sm-4">
+                      <div class="form-group">
+                        <label>Restaurant Phone Number</label>
+                        <input type="text" class="form-control" placeholder="Enter ..." value="{{list.vendorId.contactPhone}}" readonly>
+                      </div>
+                    </div>
+
+                    <div class="col-sm-4">
+                      <div class="form-group">
+                        <label>Restaurant Address</label>
+                        <textarea class="form-control" readonly>{{list.vendorId.address}}</textarea>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-sm-4">
+                      <!-- textarea -->
+                      <div class="form-group">
+                        <label>Customer Name</label>
+                        <input type="text" class="form-control" placeholder="Enter ..." value="{{list.customerId.firstName}} {{list.customerId.lastName}}" readonly>
+                      </div>
+                    </div>
+                    <div class="col-sm-4">
+                      <div class="form-group">
+                        <label>Customer Phone Number</label>
+                        <input type="text" class="form-control" placeholder="Enter ..." value="{{list.customerId.phone}}" readonly>
+                      </div>
+                    </div>
+                    <div class="col-sm-4">
+                      <div class="form-group">
+                        <label>Customer Email</label>
+                        <input type="text" class="form-control" placeholder="Enter ..." value="{{list.customerId.email}}" readonly>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+            <!-- general form elements disabled -->
+            <div class="card card-secondary">
+              <div class="card-header">
+                <h3 class="card-title">Order Detail</h3>
+              </div>
+              <!-- /.card-header -->
+              <div class="card-body">
+                <form role="form">
+                    <div class="row">
+                        <div class="col-sm-3">
+                        <!-- textarea -->
+                        <div class="form-group">
+                            <label>Order No</label>
+                            <input type="text" class="form-control" placeholder="Enter ..." value="{{list.orderNo}}" readonly>
+                        </div>
+                        </div>
+                        <div class="col-sm-3">
+                          <div class="form-group">
+                              <label>Order Final Price</label>
+                              <input type="text" class="form-control" placeholder="Enter ..." value="{{list.finalPrice}}" readonly>
+                          </div>
+                        </div>
+                        <div class="col-sm-3">
+                          <div class="form-group">
+                              <label>Order Special Instruction</label>
+                              <textarea class="form-control" readonly>{{list.specialInstruction}}</textarea>
+                          </div>
+                        </div>
+                        <div class="col-sm-3">
+                          <div class="form-group">
+                              <label>Order Delivery Preference</label>
+                              <textarea class="form-control" readonly>{{list.deliveryPreference}}</textarea>
+                          </div>
+                        </div>
+                        <div class="col-sm-3">
+                          <div class="form-group">
+                              <label>Order Delivery Address</label>
+                              <textarea class="form-control" readonly>{{list.addressId.flatOrHouseOrBuildingOrCompany}} , {{list.addressId.areaOrColonyOrStreetOrSector}} , {{list.addressId.townOrCity}} - {{list.addressId.pinCode}}
+                              </textarea>
+                          </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+
+                        <div class="col-sm-12">
+
+                          <table id="orderDetailTable" class="table table-bordered table-hover">
+                            <thead>
+                            <tr>
+                                <th>Order Item</th>
+                                <th>Order Item Image</th>
+                                <th>Order Item Quantity</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                                {{#each list.cartDetail.item}}
+                                    <tr>
+                                        <td>{{this.itemId.itemName}}</td>
+                                        <td><img src="/img/item/{{this.itemId.menuImage}}" style="width: 100px; height: 100px;"></td>
+                                        <td>{{this.itemQuantity}}</td>
+                                    </tr>
+                                {{/each}}
+                            </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+</div>
+        </div>
+    </div>
+</section>
+
+{{#content "admin_dashboard_script" mode="append"}}
+<script src="/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script>
+
+    $(function () {
+        $('#orderDetailTable').DataTable({
+            "paging": true,
+            "lengthChange": false,
+            "searching": false,
+            "ordering": false,
+            "info": true,
+            "autoWidth": false,
+            "responsive": true,
+        });
+    });
+</script>
+{{/content}}

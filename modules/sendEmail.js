@@ -34,6 +34,11 @@ module.exports = function (emailType) {
             subject : "OTP verification email",
             html    : '../modules/emails/OTPmail.html',
         },
+        "restaurantAdminWelcomeMail": {
+            subject: "Welcome to Hot menu",
+            html    : '../modules/emails/restaurantRegistrationMail.html',
+            //html    : require('./welcomeUser'),
+        },
     };
 
     const filePath = path.join(__dirname, mailDict[emailType].html);
@@ -67,6 +72,7 @@ module.exports = function (emailType) {
                 };
 
                 data.imageUrl = `${config.serverhost}:${config.port}/img/email/`
+                data.adminUrl = `${config.serverhost}:${config.port}/admin`
 
                 var emailTemp = config.emailTemplete;
                 let mergedObj = {...data, ...emailTemp};

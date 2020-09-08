@@ -36,6 +36,41 @@
             </a>
           </li>
 
+          <li class="nav-item has-treeview {{#if_eq client_url "restaurant" }} menu-open {{/if_eq}}">
+            <a href="#" class="nav-link {{#if_eq client_url "restaurant" }} active {{/if_eq}}">
+              <i class="nav-icon fas fa-hotel"></i>
+              <p>
+                Restaurant Management
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="/admin/restaurant" class="nav-link">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>List of restaurants manager</p>
+                </a>
+              </li>
+            </ul>
+
+            {{!-- <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="/admin/restaurant/order/list" class="nav-link">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>List of restaurants Order</p>
+                </a>
+              </li>
+            </ul>
+
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="/admin/restaurant/item/list" class="nav-link">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>List of restaurants Menu</p>
+                </a>
+              </li>
+            </ul> --}}
+          </li>
+
           {{/if_eq}}
 
           {{#if_eq user.userType 'restaurant'}}
