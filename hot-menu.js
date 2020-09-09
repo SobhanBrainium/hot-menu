@@ -299,6 +299,9 @@ app.use(corsMiddleWare);
 const customerRoutes = require('./routes/customers');
 app.use('/api/customer',customerRoutes);
 
+const restaurantRoutes = require('./routes/restaurant')
+app.use('/api/restaurant', restaurantRoutes)
+
 //#region Admin routes
 const adminIndexRoute = require('./routes/admin/index');
 app.use(adminIndexRoute)
