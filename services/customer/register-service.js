@@ -405,5 +405,57 @@ module.exports = {
             const searchMenu = await registerModel.searchMenu(data)
             return searchMenu
         }
+    },
+    addressType : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const addressType = await registerModel.addressType(data)
+            return addressType
+        }
+    },
+    addAddress : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const addAddress = await registerModel.addAddress(data)
+            return addAddress
+        }
+    },
+    addressList : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const addressList = await registerModel.addressList(data)
+            return addressList
+        }
+    },
+    addressDelete : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const addressDelete = await registerModel.addressDelete(data)
+            return addressDelete
+        }
     }
 }

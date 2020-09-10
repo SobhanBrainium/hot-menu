@@ -178,4 +178,32 @@ customerApi.post("/searchMenu", jwtTokenValidator.validateToken, customerValidat
 })
 //#endregion
 
+//#region address type
+customerApi.get("/addressType", async(req, res) => {
+    const result = await registerService.addressType(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region address add
+customerApi.post("/addAddress", jwtTokenValidator.validateToken, customerValidator.addAddress, async(req, res) => {
+    const result = await registerService.addAddress(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region address list
+customerApi.post("/addressList", jwtTokenValidator.validateToken, customerValidator.addressList, async(req, res) => {
+    const result = await registerService.addressList(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region address delete
+customerApi.post("/addressDelete", jwtTokenValidator.validateToken, customerValidator.addressDelete, async(req, res) => {
+    const result = await registerService.addressDelete(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
 module.exports = customerApi;

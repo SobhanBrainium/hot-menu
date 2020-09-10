@@ -14,7 +14,10 @@ const OTPLog = require("../../schema/OTPLog")
 const MealType = require("../../schema/MealType")
 const Cart = require("../../schema/Cart")
 const Rating = require("../../schema/Rating");
+const AddressType = require("../../schema/AddressType")
+const Address = require("../../schema/Address")
 const { round } = require('lodash');
+const { object } = require('@hapi/joi');
 
 module.exports = {
     //Customer 
@@ -2345,6 +2348,201 @@ module.exports = {
                     }
                 }
             }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: []
+            }
+        }
+    },
+    addressType : async (data) => {
+        try {
+            const getAddressType = await AddressType.find()
+            if(getAddressType.length > 0){
+                return {
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'address type is found.',
+                    response_data: getAddressType
+                }
+            }else{
+                return {
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'No address type is found.',
+                    response_data: {}
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: []
+            }
+        }
+    },
+    addAddress : async (data) => {
+        try {
+            if(data){
+                const geoLat = data.latitude
+                const geoLong = data.longitude
+                
+                /**checking address type is already exit or not */
+                const isAlreadyExistAddressType = await Address.find({userId : data.customerId}).populate('addressType')
+                if(isAlreadyExistAddressType.length > 0){
+                    let existErrorMessage = {};
+                    _.forEach(isAlreadyExistAddressType, (value,key) => {
+                        if(value.addressType._id.toString() == data.addressType){
+                            if(value.addressType.type.toString() == "Home"){
+                                existErrorMessage = {
+                                    success: false,
+                                    STATUSCODE: 403,
+                                    message: 'This address type is already added. Please choose another.',
+                                    response_data: []
+                                }
+                                return false
+                            }else if(value.addressType.type.toString() == "Work"){
+                                existErrorMessage = {
+                                    success: false,
+                                    STATUSCODE: 403,
+                                    message: 'This address type is already added. Please choose another.',
+                                    response_data: []
+                                }
+
+                                return false
+                            }
+                        }
+                    })
+                    
+                    if(Object.keys(existErrorMessage).length > 0){
+                        return existErrorMessage
+                    }
+                }
+                /**end */
+
+                data = {
+                    ...data,
+                    location: {
+                        type: 'Point',
+                        coordinates: [geoLong,geoLat]
+                    },
+                    userId : data.customerId
+                }
+                
+                const addAddress = await Address.create(data)
+
+                if(addAddress){
+                    //find all address
+                    const getAddress = await Address.find({userId : data.customerId}).populate('addressType').sort({_id : -1})
+                    if(getAddress.length >0){
+                        return {
+                            success: true,
+                            STATUSCODE: 200,
+                            message: 'Address added successfully.',
+                            response_data: getAddress
+                        }
+                    }else{
+                        return {
+                            success: true,
+                            STATUSCODE: 200,
+                            message: 'No address found.',
+                            response_data: []
+                        }
+                    }
+                    
+                }else{
+                    return {
+                        success: false,
+                        STATUSCODE: 400,
+                        message: 'Address added failed.',
+                        response_data: []
+                    }
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: []
+            }
+        }
+    },
+    addressList : async (data) => {
+        try {
+            const getUserAllAddress = await Address.find({userId : data.customerId}).populate('addressType').sort({_id : -1})
+            if(getUserAllAddress.length > 0){
+                return {
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'Address list has been fetched successfully.',
+                    response_data: getUserAllAddress
+                }
+            }else{
+                return {
+                    success: true,
+                    STATUSCODE: 200,
+                    message: 'No address found.',
+                    response_data: []
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: []
+            }
+        }
+    },
+    addressDelete : async (data) => {
+        try {
+            if(data){
+                const isAddressExist = await Address.findOne({_id : data.addressId, userId : data.customerId})
+                if(isAddressExist){
+                    const deleteAddress = await Address.deleteOne({_id : data.addressId, userId : data.customerId})
+                    if(deleteAddress){
+                        //find address after delete one
+                        const getAddress = await Address.find({userId : data.customerId}).populate('addressType').sort({_id : -1})
+                        if(getAddress.length > 0){
+                            return {
+                                success: true,
+                                STATUSCODE: 200,
+                                message: 'Address deleted successfully.',
+                                response_data: getAddress
+                            }
+                        }else{
+                            return {
+                                success: true,
+                                STATUSCODE: 200,
+                                message: 'Address deleted successfully.',
+                                response_data: []
+                            }
+                        }
+                    }else{
+                        return {
+                            success: false,
+                            STATUSCODE: 400,
+                            message: 'Something went wrong.',
+                            response_data: []
+                        }
+                    }
+                }else{
+                    return {
+                        success: false,
+                        STATUSCODE: 403,
+                        message: 'No address found.',
+                        response_data: []
+                    }
+                }
+            } 
         } catch (error) {
             console.log(error, 'error')
             return {
