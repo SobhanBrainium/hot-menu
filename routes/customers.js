@@ -206,4 +206,18 @@ customerApi.post("/addressDelete", jwtTokenValidator.validateToken, customerVali
 })
 //#endregion
 
+//#region address mark as default
+customerApi.post("/addressMarkedAsDefault", jwtTokenValidator.validateToken, customerValidator.addressMarkedAsDefault, async(req, res) => {
+    const result = await registerService.addressMarkedAsDefault(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region address edit
+customerApi.post("/addressEdit", jwtTokenValidator.validateToken, customerValidator.addressEdit, async(req, res) => {
+    const result = await registerService.addressEdit(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
 module.exports = customerApi;

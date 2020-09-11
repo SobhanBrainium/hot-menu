@@ -18,6 +18,7 @@ const AddressType = require("../../schema/AddressType")
 const Address = require("../../schema/Address")
 const { round } = require('lodash');
 const { object } = require('@hapi/joi');
+const { get } = require('../../routes/customers');
 
 module.exports = {
     //Customer 
@@ -2543,6 +2544,113 @@ module.exports = {
                     }
                 }
             } 
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: []
+            }
+        }
+    },
+    addressMarkedAsDefault : async (data) => {
+        try {
+            if(data){
+                const getAddressDetail = await Address.findOne({_id : data.addressId, userId : data.customerId})
+                if(getAddressDetail){
+                    const previousDefaultAddress = await Address.findOne({isDefault : true, userId : data.customerId})
+                    if(previousDefaultAddress){
+                        previousDefaultAddress.isDefault = false
+                        await previousDefaultAddress.save()
+                    }
+
+                    /**marked as default current address */
+                    getAddressDetail.isDefault = data.isDefault
+                    await getAddressDetail.save()
+                    /**end */
+
+                    //find address after marked as default
+                    const getAddress = await Address.find({userId : data.customerId}).populate('addressType').sort({_id : -1})
+                    if(getAddress.length > 0){
+                        return {
+                            success: true,
+                            STATUSCODE: 200,
+                            message: 'Address has been marked as default successfully.',
+                            response_data: getAddress
+                        }
+                    }else{
+                        return {
+                            success: true,
+                            STATUSCODE: 200,
+                            message: 'Failed.',
+                            response_data: []
+                        }
+                    }
+
+                }else{
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'No data found.',
+                        response_data: []
+                    }
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: []
+            }
+        }
+    },
+    addressEdit : async (data) => {
+        try {
+            if(data) {
+                const getAddressDetail = await Address.findOne({_id : data.addressId, userId : data.customerId})
+                if(getAddressDetail){
+                    const geoLat = data.latitude
+                    const geoLong = data.longitude
+
+                    getAddressDetail.flatOrHouseOrBuildingOrCompany = data.flatOrHouseOrBuildingOrCompany
+                    getAddressDetail.fullAddress = data.fullAddress
+                    getAddressDetail.landmark = data.landmark ? data.landmark : getAddressDetail.landmark
+                    getAddressDetail.location = {
+                        type: 'Point',
+                        coordinates: [geoLong,geoLat]
+                    }
+
+                    await getAddressDetail.save()
+
+                    //find address after update
+                    const getAddress = await Address.find({userId : data.customerId}).populate('addressType').sort({_id : -1})
+                    if(getAddress.length > 0){
+                        return {
+                            success: true,
+                            STATUSCODE: 200,
+                            message: 'Address has been updated successfully.',
+                            response_data: getAddress
+                        }
+                    }else{
+                        return {
+                            success: true,
+                            STATUSCODE: 200,
+                            message: 'Failed.',
+                            response_data: []
+                        }
+                    }
+                }else{
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'No data found.',
+                        response_data: []
+                    }
+                }
+            }
         } catch (error) {
             console.log(error, 'error')
             return {

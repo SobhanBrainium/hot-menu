@@ -457,5 +457,31 @@ module.exports = {
             const addressDelete = await registerModel.addressDelete(data)
             return addressDelete
         }
+    },
+    addressMarkedAsDefault : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const addressMarkedAsDefault = await registerModel.addressMarkedAsDefault(data)
+            return addressMarkedAsDefault
+        }
+    },
+    addressEdit : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const addressEdit = await registerModel.addressEdit(data)
+            return addressEdit
+        } 
     }
 }

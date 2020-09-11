@@ -704,6 +704,47 @@ module.exports = {
         } else {
             next();
         }  
+    },
+    addressMarkedAsDefault : async (req, res, next) => {
+        const rules = joi.object({
+            customerId : joi.string().required().error(new Error('customerId is required')),
+            addressId : joi.string().required().error(new Error('addressId is required')),
+            isDefault : joi.string().required().error(new Error('isDefault is required'))
+        });
+
+        const value = await rules.validate(req.body);
+        if (value.error) {
+            res.status(422).json({
+                success: false,
+                STATUSCODE: 422,
+                message: value.error.message
+            })
+        } else {
+            next();
+        }
+    },
+    addressEdit : async (req, res, next) => {
+        const rules = joi.object({
+            customerId : joi.string().required().error(new Error('customerId is required')),
+            addressId : joi.string().required().error(new Error('addressId is required')),
+            // addressType : joi.string().required().error(new Error('addressType is required')),
+            flatOrHouseOrBuildingOrCompany: joi.string().required().error(new Error('flatOrHouseOrBuildingOrCompany is required')),
+            fullAddress: joi.string().required().error(new Error('fullAddress is required')),
+            landmark: joi.string().allow('').optional(),
+            latitude: joi.string().required().error(new Error('latitude is required')),
+            longitude: joi.string().required().error(new Error('longitude is required')),
+        });
+
+        const value = await rules.validate(req.body);
+        if (value.error) {
+            res.status(422).json({
+                success: false,
+                STATUSCODE: 422,
+                message: value.error.message
+            })
+        } else {
+            next();
+        } 
     }
 }
 
