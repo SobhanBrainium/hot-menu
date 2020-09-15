@@ -745,6 +745,43 @@ module.exports = {
         } else {
             next();
         } 
+    },
+    orderSubmit : async (req, res, next) => {
+        const rules = joi.object({
+            customerId : joi.string().required().error(new Error('customerId is required')),
+            cartId : joi.string().required().error(new Error('cartId is required')),
+            paymentStatus : joi.string().required().error(new Error('paymentStatus is required')),
+            paymentId: joi.string().required().error(new Error('paymentId is required')),
+            promoCodeId: joi.string().optional(),
+            finalAmount: joi.string().required().error(new Error('finalAmount is required'))
+        });
+
+        const value = await rules.validate(req.body);
+        if (value.error) {
+            res.status(422).json({
+                success: false,
+                STATUSCODE: 422,
+                message: value.error.message
+            })
+        } else {
+            next();
+        } 
+    },
+    orderList : async (req, res, next) => {
+        const rules = joi.object({
+            customerId : joi.string().required().error(new Error('customerId is required'))
+        });
+
+        const value = await rules.validate(req.body);
+        if (value.error) {
+            res.status(422).json({
+                success: false,
+                STATUSCODE: 422,
+                message: value.error.message
+            })
+        } else {
+            next();
+        } 
     }
 }
 

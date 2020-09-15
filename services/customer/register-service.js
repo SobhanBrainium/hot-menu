@@ -483,5 +483,32 @@ module.exports = {
             const addressEdit = await registerModel.addressEdit(data)
             return addressEdit
         } 
+    },
+    orderSubmit : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const orderSubmit = await registerModel.orderSubmit(data)
+            return orderSubmit
+        }
+    },
+    orderList : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const orderSubmit = await registerModel.orderSubmit(data)
+            return orderSubmit
+        }
+        
     }
 }

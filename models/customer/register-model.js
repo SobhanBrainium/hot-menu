@@ -16,9 +16,8 @@ const Cart = require("../../schema/Cart")
 const Rating = require("../../schema/Rating");
 const AddressType = require("../../schema/AddressType")
 const Address = require("../../schema/Address")
+const Order = require("../../schema/Order")
 const { round } = require('lodash');
-const { object } = require('@hapi/joi');
-const { get } = require('../../routes/customers');
 
 module.exports = {
     //Customer 
@@ -2660,6 +2659,134 @@ module.exports = {
                 response_data: []
             }
         }
+    },
+    orderSubmit : async (data) => {
+        try {
+            if(data){
+                const isAlreadyExist = await Order.findOne({customerId : data.customerId, cartId : data.cartId, "paymentInfo.paymentStatus" : "SUCCESS"})
+                if(isAlreadyExist){
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'Order is already placed.',
+                        response_data: {}
+                    }
+                }else{
+                    let paymentInfo = {
+                        paymentStatus : data.paymentStatus,
+                        paymentId : data.paymentId
+                    }
+
+                    let orderLog = {
+                        logDetail : "Order Placed.",
+                        logTime : Date.now()
+                    }
+
+                    const orderNo = generateOrder();
+
+                    const orderPlacedObj = new Order({
+                        orderNo,
+                        customerId : data.customerId,
+                        cartId : data.cartId,
+                        paymentInfo,
+                        finalAmount : data.finalAmount,
+                        orderStatus : 0, // order initiate
+                        orderLog
+                    })
+
+                    const addResp = await orderPlacedObj.save()
+
+                    if(addResp){
+                        //#region update cart
+                        if(paymentInfo.paymentStatus === 'SUCCESS'){
+                            const updateCart = await Cart.findByIdAndUpdate({_id : data.cartId},{
+                                $set : {
+                                    isCheckout : 2 //order placed
+                                }
+                            })
+                        }
+                        //#endregion
+
+                        return {
+                            success: true,
+                            STATUSCODE: 200,
+                            message: 'Thank You! Order has been successfully placed.',
+                            response_data: addResp
+                        }
+                    }else{
+                        return {
+                            success: false,
+                            STATUSCODE: 300,
+                            message: 'Something went wrong.',
+                            response_data: {}
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
+    },
+    orderList : async (data) => {
+        try {
+            if(data){
+                const getOrderLists = await Order.find({customerId : data.customerId})
+                if(getOrderLists.length > 0){
+                    let finalArray = []
+                    _.forEach(getOrderLists, async (value, key) => {
+                        let orderStatus = ''
+                        switch (value.orderStatus) {
+                            case 0:
+                                orderStatus : "Order initiate"
+                                break;
+                            case 1:
+                                orderStatus : "Order Picked Up"
+                                break;
+
+                            case 2:
+                                orderStatus : "Delivered"
+                                break;
+                            case 3:
+                                orderStatus : "Cancelled"
+                                break;
+
+                            default:
+                                break;
+                        }
+
+                        let orderListObj = {
+                            orderId : value._id,
+                            orderNo : value.orderNo,
+                            finalAmount : value.finalAmount,
+                            orderStatus : orderStatus,
+                            orderTime : value.createdAt
+                        }
+                    })
+                    
+                }else{
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'No record found.',
+                        response_data: {}
+                    }
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
     }
 }
 
@@ -2737,7 +2864,6 @@ function sendVerificationCode(customer) {
 
 }
 
-
 //Upload image
 function uploadImage(file, name) {
     return new Promise(function (resolve, reject) {
@@ -2760,4 +2886,10 @@ function uploadImage(file, name) {
             }
         });
     });
+}
+
+function generateOrder() {
+
+    var orderNo = `HM${Math.floor((Math.random() * 100000))}`
+    return orderNo;
 }

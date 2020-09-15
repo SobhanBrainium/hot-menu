@@ -220,4 +220,18 @@ customerApi.post("/addressEdit", jwtTokenValidator.validateToken, customerValida
 })
 //#endregion
 
+//#region Place order
+customerApi.post("/orderSubmit", jwtTokenValidator.validateToken, customerValidator.orderSubmit, async(req, res) => {
+    const result = await registerService.orderSubmit(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region order list
+customerApi.post("/orderList", jwtTokenValidator.validateToken, customerValidator.orderList, async(req, res) => {
+    const result = await registerService.orderList(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
 module.exports = customerApi;
