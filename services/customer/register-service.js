@@ -506,9 +506,21 @@ module.exports = {
                 response_data: {}
             })
         } else {
-            const orderSubmit = await registerModel.orderSubmit(data)
-            return orderSubmit
+            const orderList = await registerModel.orderList(data)
+            return orderList
         }
-        
+    },
+    orderDetail : async (data) => {
+        if (!data) {
+            res.json({
+                success: false,
+                STATUSCODE: 403,
+                message: 'Request Forbidden',
+                response_data: {}
+            })
+        } else {
+            const orderDetail = await registerModel.orderDetail(data)
+            return orderDetail
+        }
     }
 }

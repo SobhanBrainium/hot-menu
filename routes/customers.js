@@ -179,7 +179,7 @@ customerApi.post("/searchMenu", jwtTokenValidator.validateToken, customerValidat
 //#endregion
 
 //#region address type
-customerApi.get("/addressType", async(req, res) => {
+customerApi.post("/addressType", jwtTokenValidator.validateToken, customerValidator.addressType, async(req, res) => {
     const result = await registerService.addressType(req.body);
     res.status(200).send(result);
 })
@@ -230,6 +230,13 @@ customerApi.post("/orderSubmit", jwtTokenValidator.validateToken, customerValida
 //#region order list
 customerApi.post("/orderList", jwtTokenValidator.validateToken, customerValidator.orderList, async(req, res) => {
     const result = await registerService.orderList(req.body);
+    res.status(200).send(result);
+})
+//#endregion
+
+//#region order detail
+customerApi.post("/trackOrder", jwtTokenValidator.validateToken, customerValidator.orderDetail, async(req, res) => {
+    const result = await registerService.orderDetail(req.body);
     res.status(200).send(result);
 })
 //#endregion

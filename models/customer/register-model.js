@@ -2362,11 +2362,47 @@ module.exports = {
         try {
             const getAddressType = await AddressType.find()
             if(getAddressType.length > 0){
+                const getUserAddedAddress = await Address.find({userId : data.customerId},{addressType : 1, _id : 0})
+                
+                let finalArray = []
+                let addressTypeObj = {}
+
+                for(let i = 0; i < getAddressType.length; i++){
+                    const userAddressInDbIsExist = await Address.find({userId : data.customerId, addressType : getAddressType[i]._id})
+
+                    if(userAddressInDbIsExist.length > 0){
+                        if(getAddressType[i].type === 'Home' || getAddressType[i].type === 'Work'){
+                            addressTypeObj = {
+                                ...getAddressType[i].toObject(),
+                                status : 1
+                            }
+
+                            finalArray.push(addressTypeObj)
+                        }
+
+                        if(getAddressType[i].type === 'Other'){
+                            addressTypeObj = {
+                                ...getAddressType[i].toObject(),
+                                status : 0
+                            }
+
+                            finalArray.push(addressTypeObj)
+                        }
+                    }else{
+                        addressTypeObj = {
+                            ...getAddressType[i].toObject(),
+                            status : 0
+                        }
+
+                        finalArray.push(addressTypeObj)
+                    }
+                }
+
                 return {
                     success: true,
                     STATUSCODE: 200,
                     message: 'address type is found.',
-                    response_data: getAddressType
+                    response_data: finalArray
                 }
             }else{
                 return {
@@ -2736,24 +2772,24 @@ module.exports = {
     orderList : async (data) => {
         try {
             if(data){
-                const getOrderLists = await Order.find({customerId : data.customerId})
+                const getOrderLists = await Order.find({customerId : data.customerId}).sort({_id : -1})
                 if(getOrderLists.length > 0){
                     let finalArray = []
                     _.forEach(getOrderLists, async (value, key) => {
-                        let orderStatus = ''
+                        var orderStatus = ''
                         switch (value.orderStatus) {
                             case 0:
-                                orderStatus : "Order initiate"
+                                orderStatus = "Order initiate"
                                 break;
                             case 1:
-                                orderStatus : "Order Picked Up"
+                                orderStatus = "Order Picked Up"
                                 break;
 
                             case 2:
-                                orderStatus : "Delivered"
+                                orderStatus = "Delivered"
                                 break;
                             case 3:
-                                orderStatus : "Cancelled"
+                                orderStatus = "Cancelled"
                                 break;
 
                             default:
@@ -2767,8 +2803,61 @@ module.exports = {
                             orderStatus : orderStatus,
                             orderTime : value.createdAt
                         }
+
+                        finalArray.push(orderListObj)
                     })
+
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'Order lists has been found successfully.',
+                        response_data: finalArray
+                    }
                     
+                }else{
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'No record found.',
+                        response_data: []
+                    }
+                }
+            }
+        } catch (error) {
+            console.log(error, 'error')
+            return {
+                success: false,
+                STATUSCODE: 500,
+                message: 'Internal DB error.',
+                response_data: {}
+            }
+        }
+    },
+    orderDetail : async (data) => {
+        try {
+            if(data){
+                const getOrderDetail = await Order.findOne({_id : data.orderId, customerId : data.customerId})
+                .populate({
+                    path : 'cartId',
+                    select : {isCheckout : 0, status : 0, createdAt : 0, updatedAt : 0, __v : 0, customerId : 0},
+                    populate : {
+                        path : 'menus.menuId',
+                        select : {itemName : 1, menuImage : 1, type : 1 }
+                    }
+                })
+                .populate('promoCodeId')
+
+                if(getOrderDetail){
+                    _.forEach(getOrderDetail.cartId.menus, async (value, key) => {
+                        value.menuId.menuImage = `${config.serverhost}:${config.port}/img/menu-pic/` + value.menuId.menuImage
+                    })
+
+                    return {
+                        success: true,
+                        STATUSCODE: 200,
+                        message: 'Order detail fetched successfully.',
+                        response_data: getOrderDetail
+                    }
                 }else{
                     return {
                         success: true,
